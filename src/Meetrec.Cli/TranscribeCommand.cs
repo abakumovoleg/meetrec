@@ -90,7 +90,7 @@ internal static class TranscribeCommand
         var utterances = TranscriptMerger.Merge(micWords, systemWords, segments, input.OffsetMs);
         var paths = TranscriptWriter.WriteAll(input.OutputDirectory, utterances, settings.Formats, input.OutputName);
 
-        var speakers = utterances.Select(u => u.Speaker).Distinct().Count();
+        var speakers = utterances.Select(u => u.Speaker).Where(s => s != Speakers.Unknown).Distinct().Count();
         Console.Error.WriteLine($"Готово за {Formatting.Duration(total.Elapsed)}: {utterances.Count} реплик, спикеров {speakers}");
         foreach (var path in paths)
         {
