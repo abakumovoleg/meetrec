@@ -10,6 +10,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Meetrec.Core\Meetrec.Core.csproj" />
   </ItemGroup>
 
