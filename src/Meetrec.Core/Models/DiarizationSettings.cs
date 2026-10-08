@@ -2,7 +2,7 @@ namespace Meetrec.Core.Models;
 
 public sealed record DiarizationSettings(ModelInfo Embedding, int? NumClusters, float Threshold)
 {
-    public const float WespeakerThreshold = 0.6f;
+    public const float WespeakerThreshold = 0.7f;
 
     public const float Eres2NetThreshold = 0.5f;
 
