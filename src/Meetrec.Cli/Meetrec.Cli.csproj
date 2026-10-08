@@ -6,8 +6,35 @@
     <RootNamespace>Meetrec.Cli</RootNamespace>
   </PropertyGroup>
 
+  <!-- Managed code goes into one file; native libraries stay next to it: Whisper.net looks for them on disk under
+       runtimes/ and does not find them when they are bundled and extracted (see docs/decisions.md). -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <DebugType>none</DebugType>
+    <WhisperPlatform>$(RuntimeIdentifier.Replace('osx-', 'macos-'))</WhisperPlatform>
+  </PropertyGroup>
+
+  <!-- Whisper runtimes are chosen here, not in Meetrec.Asr: a referenced library is built without the RuntimeIdentifier,
+       so it cannot tell a cross-platform publish from a local build. -->
+  <PropertyGroup>
+    <TargetsMac Condition="'$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX'))">true</TargetsMac>
+    <TargetsMac Condition="$(RuntimeIdentifier.StartsWith('osx'))">true</TargetsMac>
+    <TargetsWindows Condition="'$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows'))">true</TargetsWindows>
+    <TargetsWindows Condition="$(RuntimeIdentifier.StartsWith('win'))">true</TargetsWindows>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="Whisper.net.Runtime" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetsMac)' == 'true'">
+    <PackageReference Include="Whisper.net.Runtime.CoreML" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetsWindows)' == 'true'">
+    <PackageReference Include="Whisper.net.Runtime.Vulkan" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,6 +44,15 @@
     <ProjectReference Include="..\Meetrec.Capture.Mac\Meetrec.Capture.Mac.csproj" />
   </ItemGroup>
 
+  <!-- Whisper.net copies native libraries for every platform as plain files; publish only the target one. -->
+  <Target Name="FilterPublishedFiles" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(WhisperPlatform)' != ''">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').Replace('\', '/').StartsWith('runtimes/')) and !$([System.String]::Copy('%(ResolvedFileToPublish.RelativePath)').Replace('\', '/').Contains('/$(WhisperPlatform)/'))" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.metal' and !$(RuntimeIdentifier.StartsWith('osx-'))" />
+    </ItemGroup>
+  </Target>
+
   <PropertyGroup>
     <CaptureHelperDir>$(MSBuildThisFileDirectory)..\..\native\meetrec-capture</CaptureHelperDir>
   </PropertyGroup>
@@ -25,6 +61,10 @@
   <Target Name="BuildCaptureHelper" AfterTargets="Build" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
     <Exec Command="swift build -c release --arch arm64 --package-path &quot;$(CaptureHelperDir)&quot;" StandardOutputImportance="low" />
     <Copy SourceFiles="$(CaptureHelperDir)/.build/release/meetrec-capture" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="PublishCaptureHelper" AfterTargets="Publish" Condition="$([MSBuild]::IsOSPlatform('OSX')) and $(RuntimeIdentifier.StartsWith('osx-'))">
+    <Copy SourceFiles="$(CaptureHelperDir)/.build/release/meetrec-capture" DestinationFolder="$(PublishDir)" />
   </Target>
 
 </Project>

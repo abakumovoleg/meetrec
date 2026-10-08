@@ -18,10 +18,10 @@ CLI-рекордер созвонов: пишет микрофон и систе
 
 ## Что работает
 
-| | macOS (Apple Silicon, 14.2+) | Windows |
+| | macOS (Apple Silicon) | Windows |
 | --- | --- | --- |
-| Запись (`record`, `run`, `devices`) | да | пока нет |
-| Расшифровка готовой записи (`transcribe`, `names`) | да | собирается, не проверялась |
+| Запись (`record`, `run`, `devices`) | да, macOS 14.2+ | пока нет |
+| Расшифровка готовой записи (`transcribe`, `names`) | да, macOS 15+ | собирается, не проверялась |
 
 ## Установка
 
@@ -172,5 +172,14 @@ dotnet build
 dotnet test
 cd native/meetrec-capture && swift build -c release --arch arm64 && swift test
 ```
+
+Сборка для распространения — self-contained, .NET на целевой машине не нужен:
+
+```sh
+dotnet publish src/Meetrec.Cli -c Release -r osx-arm64 -o publish/osx-arm64
+dotnet publish src/Meetrec.Cli -c Release -r win-x64 -o publish/win-x64
+```
+
+В папке — `meetrec` и нативные библиотеки рядом с ним (на macOS — ещё `meetrec-capture`); переносить её нужно целиком.
 
 Ход работы — [`docs/progress.md`](docs/progress.md), обоснования решений с замерами — [`docs/decisions.md`](docs/decisions.md).
