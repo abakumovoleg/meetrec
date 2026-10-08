@@ -13,7 +13,8 @@ public static class TranscriptWriter
 
     public static IReadOnlyCollection<string> SupportedFormats => [.. Formatters.Keys];
 
-    public static IReadOnlyList<string> WriteAll(string directory, IReadOnlyList<Utterance> utterances, IEnumerable<string> formats)
+    public static IReadOnlyList<string> WriteAll(
+        string directory, IReadOnlyList<Utterance> utterances, IEnumerable<string> formats, string fileNameWithoutExtension = FileNameWithoutExtension)
     {
         var paths = new List<string>();
         foreach (var format in formats.Distinct(StringComparer.OrdinalIgnoreCase))
@@ -23,7 +24,7 @@ public static class TranscriptWriter
                 throw new ArgumentException($"Неизвестный формат: {format}", nameof(formats));
             }
 
-            var path = Path.Combine(directory, $"{FileNameWithoutExtension}.{formatter.Format}");
+            var path = Path.Combine(directory, $"{fileNameWithoutExtension}.{formatter.Format}");
             using (var writer = new StreamWriter(path, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
             {
                 formatter.Write(utterances, writer);

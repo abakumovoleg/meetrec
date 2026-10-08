@@ -1,13 +1,9 @@
 using System.CommandLine;
-using Meetrec.Core.Models;
-using Meetrec.Core.Output;
 
 namespace Meetrec.Cli;
 
 internal static class CliCommands
 {
-    private static readonly string[] Languages = ["ru", "en", "auto"];
-
     public static Command Record()
     {
         var command = new Command("record", "Записать микрофон и системный звук в папку сессии");
@@ -16,23 +12,11 @@ internal static class CliCommands
         return command;
     }
 
-    public static Command Transcribe()
-    {
-        var input = new Argument<string>("input")
-        {
-            Description = "Папка сессии или одиночный WAV-файл",
-        };
-        var command = new Command("transcribe", "Расшифровать готовую запись") { input };
-        AddTranscribeOptions(command);
-        command.SetAction(_ => NotImplemented("transcribe"));
-        return command;
-    }
-
     public static Command Run()
     {
         var command = new Command("run", "Записать, а после остановки расшифровать");
         AddRecordOptions(command);
-        AddTranscribeOptions(command);
+        new TranscribeOptions().AddTo(command);
         command.SetAction(_ => NotImplemented("run"));
         return command;
     }
@@ -58,44 +42,6 @@ internal static class CliCommands
         {
             Description = "Не записывать микрофон",
         });
-    }
-
-    private static void AddTranscribeOptions(Command command)
-    {
-        command.Options.Add(new Option<int?>("--speakers")
-        {
-            Description = "Общее число спикеров, включая «Я»",
-        });
-        command.Options.Add(new Option<string>("--lang")
-        {
-            Description = "Язык речи",
-            DefaultValueFactory = _ => "auto",
-        }.AcceptOnlyFromAmong(Languages));
-        command.Options.Add(new Option<string>("--model")
-        {
-            Description = "Модель Whisper",
-            DefaultValueFactory = _ => ModelCatalog.DefaultWhisper,
-        }.AcceptOnlyFromAmong([.. ModelCatalog.WhisperNames]));
-        command.Options.Add(new Option<string[]>("--format")
-        {
-            Description = "Форматы вывода через запятую: md,json,srt",
-            DefaultValueFactory = _ => [.. TranscriptWriter.SupportedFormats],
-            CustomParser = r => r.Tokens.SelectMany(t => t.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)).ToArray(),
-            Validators = { r => ValidateFormats(r) },
-        });
-        command.Options.Add(new Option<float?>("--threshold")
-        {
-            Description = $"Порог кластеризации спикеров, если не задан --speakers (по умолчанию {DiarizationSettings.WespeakerThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture)}); больше — меньше спикеров",
-        });
-    }
-
-    private static void ValidateFormats(System.CommandLine.Parsing.OptionResult result)
-    {
-        var unknown = result.GetValueOrDefault<string[]>().Except(TranscriptWriter.SupportedFormats, StringComparer.OrdinalIgnoreCase).ToArray();
-        if (unknown.Length > 0)
-        {
-            result.AddError($"Неизвестный формат: {string.Join(", ", unknown)}. Допустимо: {string.Join(", ", TranscriptWriter.SupportedFormats)}");
-        }
     }
 
     private static int NotImplemented(string name)

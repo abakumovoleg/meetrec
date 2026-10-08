@@ -4,7 +4,7 @@ using Meetrec.Cli;
 var root = new RootCommand("meetrec — запись созвонов и локальная расшифровка")
 {
     CliCommands.Record(),
-    CliCommands.Transcribe(),
+    TranscribeCommand.Create(),
     CliCommands.Run(),
     CliCommands.Devices(),
     ModelsCommand.Create(),

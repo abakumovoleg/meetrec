@@ -40,4 +40,19 @@ public sealed class TranscriptWriterTests : IDisposable
         // Assert
         Assert.Throws<ArgumentException>(act);
     }
+
+    [Fact]
+    public void WriteAll_CustomFileName_UsesItForEveryFormat()
+    {
+        // Arrange
+        var utterances = new[] { Utterance(Word("тест", 0, 1)) };
+
+        // Act
+        var paths = TranscriptWriter.WriteAll(_dir, utterances, ["md", "json"], "call.transcript");
+
+        // Assert
+        Assert.Equal(
+            [Path.Combine(_dir, "call.transcript.md"), Path.Combine(_dir, "call.transcript.json")],
+            paths);
+    }
 }

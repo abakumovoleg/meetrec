@@ -14,18 +14,20 @@
 | 6 | `WhisperTranscriber` (Whisper.net 1.9.1, `SplitOnWord`, CoreML на Mac) | `fa222a6` |
 | 7 | `SileroVad` + `SpeechMask` — VAD после распознавания (отступление от спеки, см. decisions); `SpeechRecognizer` связывает VAD и Whisper | `a793360` |
 | 8 | `SpeakerDiarizer` (sherpa-onnx), `DiarizationSettings.Choose` — eres2net при `--speakers`, wespeaker с порогом 0,6 без него | `77755c1` |
+| 9 | `meetrec transcribe` end-to-end: `TranscribeInput` (папка сессии или WAV), `SessionFile` (чтение/запись `session.json`), `TranscriptionModels` (автоскачивание), прогресс по этапам, вывод `transcript.*` / `<имя>.transcript.*` | следующий после `6953d32` |
 
-68 юнит-тестов в `tests/Meetrec.Core.Tests`, все зелёные (`dotnet test`).
+79 юнит-тестов в `tests/Meetrec.Core.Tests`, все зелёные (`dotnet test`).
 
-**Ещё не подключено к CLI:** команды `transcribe`, `record`, `run`, `devices` — заглушки. Работают только `models` и `models download`. Распознавание и диаризация пока вызываются только из стенда замеров.
+**Ещё не подключено к CLI:** `record`, `run`, `devices` — заглушки. Работают `transcribe`, `models`, `models download`.
+
+Проверка шага 9 на реальной 8-минутной записи: одиночный файл — 1 мин 10 с (из них ≈ 20 с — первая компиляция CoreML), 5 спикеров; папка сессии с синтетическим `mic.wav` (44,1 кГц стерео) и `offsetMs = 20000` — 44 с, «Я» на 00:00:20, при `--speakers 6` ровно 5 спикеров + «Я».
 
 ## Осталось
 
-Предлагаемый порядок: 9 → 11–12 → 14–16 → 13.
+Предлагаемый порядок: 11–12 → 14–16 → 13.
 
 **Этапы 1–2 спеки — расшифровка готовой записи**
 
-- [ ] **9. `meetrec transcribe` end-to-end.** Вход: одиночный WAV (= системная дорожка, без «Я») или папка сессии с `mic.wav` + `system.wav` + `session.json` (`offsetMs`). Автоскачивание нужных моделей (Whisper, CoreML-энкодер на Mac, Silero, pyannote, эмбеддинг по `DiarizationSettings`); прогресс в консоли; оба трека распознаются одним экземпляром Whisper последовательно; диаризация только `system.wav`; `Merge`; запись `transcript.*` в папку сессии. Решить, куда писать вывод для одиночного файла. Чтение/запись `session.json` (модель `Session` уже есть).
 - [ ] **10. Приёмка этапа 1:** ≥ 85 % слов верному спикеру на 10-минутной записи 3 спикеров с `--speakers 3`, таймкоды реплик ±0,5 с. Нужна запись с известной разметкой — у пользователя её пока нет.
 
 **Этап 4 — запись на macOS**
@@ -47,6 +49,7 @@
 
 - Реплики, где вопрос и ответ разных людей склеены — смена спикера без паузы не ловится.
 - Размер пакета `Whisper.net.Runtime.Cuda` на Windows и его влияние на архив.
-- CoreML-рантайм без энкодера не стартует — в шаге 9 обязательно скачивать энкодер (или откатываться на другой рантайм).
+- CoreML-энкодер скачивается на любом macOS (`OperatingSystem.IsMacOS()`); на Intel-Mac CoreML-рантайм не проверялся.
+- `record` (шаг 12) должен писать `session.json` через `SessionFile.Write`; `run` — переиспользовать `TranscribeCommand.RunAsync` и `TranscribeOptions`.
 - SHA256 моделей (сейчас только проверка размера).
 - Стенд замеров живёт в `/tmp/meetrec-eval` и может пропасть после перезагрузки; при необходимости перенести в `tools/eval`.
