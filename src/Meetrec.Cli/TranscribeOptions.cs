@@ -6,7 +6,7 @@ using Meetrec.Core.Output;
 
 namespace Meetrec.Cli;
 
-internal sealed record TranscribeSettings(int? Speakers, string Language, string Model, IReadOnlyList<string> Formats, float? Threshold);
+internal sealed record TranscribeSettings(int? Speakers, string Language, string Model, IReadOnlyList<string> Formats, float? Threshold, bool AskNames);
 
 internal sealed class TranscribeOptions
 {
@@ -43,6 +43,11 @@ internal sealed class TranscribeOptions
         Description = $"Порог кластеризации спикеров, если не задан --speakers (по умолчанию {DiarizationSettings.WespeakerThreshold.ToString(CultureInfo.InvariantCulture)}); больше — меньше спикеров",
     };
 
+    private readonly Option<bool> _noNames = new("--no-names")
+    {
+        Description = "Не спрашивать имена спикеров после расшифровки",
+    };
+
     public void AddTo(Command command)
     {
         command.Options.Add(_speakers);
@@ -50,6 +55,7 @@ internal sealed class TranscribeOptions
         command.Options.Add(_model);
         command.Options.Add(_formats);
         command.Options.Add(_threshold);
+        command.Options.Add(_noNames);
     }
 
     public TranscribeSettings Read(ParseResult parse) => new(
@@ -57,7 +63,8 @@ internal sealed class TranscribeOptions
         parse.GetRequiredValue(_language),
         parse.GetRequiredValue(_model),
         parse.GetRequiredValue(_formats),
-        parse.GetValue(_threshold));
+        parse.GetValue(_threshold),
+        !parse.GetValue(_noNames));
 
     private static void ValidatePositive(OptionResult result)
     {

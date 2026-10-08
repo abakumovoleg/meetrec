@@ -27,7 +27,7 @@ public static class TranscriptMerger
             words.Add(new TranscriptWord(word.Text, word.Start, word.End, label, track));
         }
 
-        return GroupIntoUtterances(words);
+        return Group(words);
     }
 
     private static string Label(int? speaker, Dictionary<int, string> labels)
@@ -79,7 +79,7 @@ public static class TranscriptMerger
         return nearest is not null && nearestDistance <= NearestSegmentTolerance ? nearest.Speaker : null;
     }
 
-    private static List<Utterance> GroupIntoUtterances(List<TranscriptWord> words)
+    public static IReadOnlyList<Utterance> Group(IReadOnlyList<TranscriptWord> words)
     {
         var utterances = new List<Utterance>();
         var current = new List<TranscriptWord>();

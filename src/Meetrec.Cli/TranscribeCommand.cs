@@ -92,6 +92,12 @@ internal static class TranscribeCommand
 
         var speakers = utterances.Select(u => u.Speaker).Where(s => s != Speakers.Unknown).Distinct().Count();
         Console.Error.WriteLine($"Готово за {Formatting.Duration(total.Elapsed)}: {utterances.Count} реплик, спикеров {speakers}");
+
+        if (settings.AskNames && NamesCommand.IsInteractive && NamesDialog.Run(utterances, input.SystemPath, ct) is { } named)
+        {
+            paths = TranscriptWriter.WriteAll(input.OutputDirectory, named, settings.Formats, input.OutputName);
+        }
+
         foreach (var path in paths)
         {
             Console.WriteLine(path);

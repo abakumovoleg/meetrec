@@ -7,6 +7,7 @@ var root = new RootCommand("meetrec — запись созвонов и лок�
 {
     RecordCommand.Record(interrupts),
     TranscribeCommand.Create(interrupts),
+    NamesCommand.Create(interrupts),
     RecordCommand.Run(interrupts),
     RecordCommand.Devices(interrupts),
     ModelsCommand.Create(interrupts),

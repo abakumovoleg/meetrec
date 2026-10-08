@@ -34,6 +34,23 @@ public class JsonFormatterTests
     }
 
     [Fact]
+    public void Write_LabelOnlyForRenamedWords()
+    {
+        // Arrange
+        var utterance = Utterance(
+            Word("да", 0, 0.5, "Олег", Track.System, Speakers.Numbered(1)),
+            Word("ну", 0.6, 1, "Олег", Track.System));
+
+        // Act
+        var json = Render(new JsonFormatter(), utterance);
+
+        // Assert
+        var words = JsonDocument.Parse(json).RootElement.GetProperty("utterances")[0].GetProperty("words");
+        Assert.Equal("Спикер 1", words[0].GetProperty("label").GetString());
+        Assert.False(words[1].TryGetProperty("label", out _));
+    }
+
+    [Fact]
     public void Write_Cyrillic_IsNotEscaped()
     {
         // Arrange
