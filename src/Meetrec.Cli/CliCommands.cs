@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Meetrec.Core.Output;
 
 namespace Meetrec.Cli;
 
@@ -8,8 +9,6 @@ internal static class CliCommands
         ["tiny", "base", "small", "medium", "large-v3", "large-v3-turbo"];
 
     private static readonly string[] Languages = ["ru", "en", "auto"];
-
-    private static readonly string[] Formats = ["md", "json", "srt"];
 
     public static Command Record()
     {
@@ -89,7 +88,7 @@ internal static class CliCommands
         command.Options.Add(new Option<string[]>("--format")
         {
             Description = "Форматы вывода через запятую: md,json,srt",
-            DefaultValueFactory = _ => Formats,
+            DefaultValueFactory = _ => [.. TranscriptWriter.SupportedFormats],
             CustomParser = r => r.Tokens.SelectMany(t => t.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)).ToArray(),
             Validators = { r => ValidateFormats(r) },
         });
@@ -102,10 +101,10 @@ internal static class CliCommands
 
     private static void ValidateFormats(System.CommandLine.Parsing.OptionResult result)
     {
-        var unknown = result.GetValueOrDefault<string[]>().Except(Formats).ToArray();
+        var unknown = result.GetValueOrDefault<string[]>().Except(TranscriptWriter.SupportedFormats, StringComparer.OrdinalIgnoreCase).ToArray();
         if (unknown.Length > 0)
         {
-            result.AddError($"Неизвестный формат: {string.Join(", ", unknown)}. Допустимо: {string.Join(", ", Formats)}");
+            result.AddError($"Неизвестный формат: {string.Join(", ", unknown)}. Допустимо: {string.Join(", ", TranscriptWriter.SupportedFormats)}");
         }
     }
 
