@@ -1,5 +1,19 @@
 using System.CommandLine;
+using System.Text;
 using Meetrec.Cli;
+
+// Every message here is in Russian, and a Windows console left on its OEM code page prints them as question
+// marks — including output redirected to a file.
+if (OperatingSystem.IsWindows())
+{
+    try
+    {
+        Console.OutputEncoding = Encoding.UTF8;
+    }
+    catch (IOException)
+    {
+    }
+}
 
 using var interrupts = new Interrupts();
 

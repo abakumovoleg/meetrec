@@ -3,7 +3,7 @@ using Meetrec.Core.Capture;
 
 namespace Meetrec.Cli;
 
-internal sealed class RecordingStatus
+internal sealed class RecordingStatus(string silenceHint)
 {
     private static readonly TimeSpan RedirectedInterval = TimeSpan.FromSeconds(30);
 
@@ -29,9 +29,7 @@ internal sealed class RecordingStatus
             var elapsed = _elapsed.Elapsed;
             if (_silence.ShouldWarn(elapsed, levels.System))
             {
-                WriteLine(
-                    $"Внимание: системный звук — сплошные нули {SilenceWatch.DefaultWindow.TotalSeconds:0} с. Если собеседники уже говорят, " +
-                    "у терминала нет разрешения «Запись звука и экрана» (Системные настройки → Конфиденциальность и безопасность).");
+                WriteLine($"Внимание: системный звук — сплошные нули {SilenceWatch.DefaultWindow.TotalSeconds:0} с. {silenceHint}");
             }
 
             var mic = levels.Mic is { } m ? $"  Я {LevelBar.Render(m)}" : "";

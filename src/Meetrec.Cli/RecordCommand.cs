@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Meetrec.Capture.Mac;
+using Meetrec.Capture.Windows;
 using Meetrec.Core;
 using Meetrec.Core.Capture;
 
@@ -7,7 +8,6 @@ namespace Meetrec.Cli;
 
 internal static class RecordCommand
 {
-    private const string SystemDeviceName = "Системный звук (Core Audio Process Tap)";
     private static readonly TimeSpan PermissionHintDelay = TimeSpan.FromSeconds(5);
 
     public static Command Record(Interrupts interrupts)
@@ -54,8 +54,8 @@ internal static class RecordCommand
 
                 var permissions = await backend.CheckPermissionsAsync(interrupts.Current);
                 Console.WriteLine();
-                Console.WriteLine($"Разрешение на микрофон: {Describe(permissions.Microphone)}");
-                Console.WriteLine($"Разрешение на системный звук: {Describe(permissions.SystemAudio)}");
+                Console.WriteLine($"Разрешение на микрофон: {Describe(permissions.Microphone, backend.Hints)}");
+                Console.WriteLine($"Разрешение на системный звук: {Describe(permissions.SystemAudio, backend.Hints)}");
 
                 return 0;
             }
@@ -80,25 +80,25 @@ internal static class RecordCommand
 
             await using var backend = CreateBackend();
             var stop = interrupts.Current;
-            ReportPermissions(await backend.CheckPermissionsAsync(stop), settings.NoMic);
+            ReportPermissions(await backend.CheckPermissionsAsync(stop), backend.Hints, settings.NoMic);
             var mic = settings.NoMic ? null : await ResolveMicrophoneAsync(backend, settings.Mic, stop);
 
             Directory.CreateDirectory(directory);
-            var status = new RecordingStatus();
+            var status = new RecordingStatus(backend.Hints.SystemSilence);
             backend.Levels += status.OnLevels;
 
             var startedAt = DateTimeOffset.UtcNow;
             var start = backend.StartAsync(directory, new CaptureOptions(mic?.Uid, settings.NoMic), stop);
             if (await Task.WhenAny(start, Task.Delay(PermissionHintDelay, CancellationToken.None)) != start)
             {
-                status.WriteLine("Запись ещё не началась. Если macOS спрашивает разрешение на микрофон или запись звука — ответьте на запрос; иначе выбранный микрофон не отдаёт звук (см. meetrec devices).");
+                status.WriteLine(backend.Hints.SlowStart);
             }
 
             var started = await start;
             status.MarkStarted();
             SessionFile.Write(
                 Path.Combine(directory, SessionFile.FileName),
-                new Session(startedAt, mic?.Name, SystemDeviceName, started.OffsetMs, AppVersion.Current));
+                new Session(startedAt, mic?.Name, started.SystemDevice, started.OffsetMs, AppVersion.Current));
             status.WriteLine($"Запись в {directory}{(mic is null ? "" : $", микрофон «{mic.Name}»")}. Ctrl+C — остановить.");
 
             await Task.WhenAny(backend.Exited, Task.Delay(Timeout.Infinite, stop));
@@ -122,35 +122,31 @@ internal static class RecordCommand
         }
     }
 
-    private const string SettingsHint =
-        "Выдайте его приложению терминала: Системные настройки → Конфиденциальность и безопасность → {0}. После этого перезапустите терминал.";
-
-    private static void ReportPermissions(CapturePermissions permissions, bool noMic)
+    private static void ReportPermissions(CapturePermissions permissions, CaptureHints hints, bool noMic)
     {
         if (permissions.SystemAudio == PermissionStatus.Denied)
         {
-            throw new CaptureException(
-                "Нет разрешения на запись системного звука — собеседники не запишутся. " +
-                string.Format(SettingsHint, "Запись звука и экрана → «Только системный звук»"));
+            throw new CaptureException(hints.SystemAudioDenied ?? "Нет доступа к системному звуку — собеседники не запишутся.");
         }
 
         if (!noMic && permissions.Microphone == PermissionStatus.Denied)
         {
             throw new CaptureException(
-                "Нет разрешения на микрофон. " + string.Format(SettingsHint, "Микрофон") + " Или запишите без него: --no-mic.");
+                (hints.MicrophoneDenied ?? "Нет доступа к микрофону.") + " Или запишите без него: --no-mic.");
         }
 
-        if (permissions.SystemAudio == PermissionStatus.Unknown || (!noMic && permissions.Microphone == PermissionStatus.Unknown))
+        if (hints.PermissionPending is { } pending
+            && (permissions.SystemAudio == PermissionStatus.Unknown || (!noMic && permissions.Microphone == PermissionStatus.Unknown)))
         {
-            Console.Error.WriteLine("macOS спросит разрешение на запись звука — ответьте «Разрешить», запись начнётся после этого.");
+            Console.Error.WriteLine(pending);
         }
     }
 
-    private static string Describe(PermissionStatus status) => status switch
+    private static string Describe(PermissionStatus status, CaptureHints hints) => status switch
     {
         PermissionStatus.Granted => "есть",
         PermissionStatus.Denied => "запрещено",
-        _ => "ещё не запрашивалось (macOS спросит при первой записи)",
+        _ => hints.PermissionUnknown,
     };
 
     private static async Task<MicrophoneDevice> ResolveMicrophoneAsync(ICaptureBackend backend, string? query, CancellationToken ct)
@@ -164,9 +160,14 @@ internal static class RecordCommand
 
     private static ICaptureBackend CreateBackend()
     {
+        if (OperatingSystem.IsWindows())
+        {
+            return new WindowsCaptureBackend();
+        }
+
         if (!OperatingSystem.IsMacOS())
         {
-            throw new CaptureException("Запись пока поддерживается только на macOS.");
+            throw new CaptureException("Запись поддерживается на macOS и Windows.");
         }
 
         var helper = MacCaptureBackend.Locate(AppContext.BaseDirectory)

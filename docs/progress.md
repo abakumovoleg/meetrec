@@ -20,17 +20,18 @@
 | 7б | `SpeechRepair`: регионы речи, где Whisper почти не дал слов (< 0,25 коротких слов/с), распознаются повторно отдельными окнами; итог `transcribe` не считает «Спикер ?» спикером | `1cd8c52` |
 | 12+ | Разрешение на системный звук: проверка (`TCCAccessPreflight`) и явный запрос (`TCCAccessRequest`) в хелпере, `--check-permissions`, отказ до старта записи, статус в `meetrec devices`. Порог громкости −60 дБFS для регионов VAD (`SpeechLevel`) — убирает «Thank you.» на молчащем микрофоне | `2791737` |
 | 17 | Имена спикеров (вне спеки): команда `meetrec names` и диалог в конце `transcribe`/`run` (`--no-names`); карточка спикера с примерами фраз и прослушиванием через `afplay`, подсказка имени по обращению перед ответом (`NameHints`), склейка спикеров с одним именем, `TranscriptReader`, метка диаризации `label` в json | `dd5c1bb` |
+| 13 | `Meetrec.Capture.Windows` (`WindowsCaptureBackend` на NAudio 3.1 `WasapiRecorder`: микрофон и loopback устройства вывода по умолчанию, 16 кГц моно при записи, тишина loopback дописывается по таймстампам QPC, `offsetMs` = 0); `Wav16Writer`, `Mono16kResampler`, `CaptureTrack` в `Meetrec.Core`; платформенные тексты — в `CaptureHints` у бэкенда; UTF-8 в консоли Windows; Ctrl+Break (`SIGQUIT`) как Ctrl+C | — |
 | 14 | Публикация `dotnet publish -r osx-arm64|win-x64`: single-file self-contained `meetrec`, нативные библиотеки папкой рядом (Whisper.net не находит распакованные), фильтр рантаймов Whisper по RID, `meetrec-capture` в папке публикации; рантаймы Whisper перенесены в `Meetrec.Cli`, CUDA убрана; минимальная macOS для расшифровки — 15.0 | `e653806` |
 
-143 юнит-теста в `tests/Meetrec.Core.Tests` (`dotnet test`) и 15 в `native/meetrec-capture` (`swift test`), все зелёные.
+165 юнит-тестов в `tests/Meetrec.Core.Tests` (`dotnet test`) и 15 в `native/meetrec-capture` (`swift test`), все зелёные.
 
-Все команды спеки работают на macOS; на Windows `record`, `run`, `devices` пока сообщают, что запись не поддерживается.
+Все команды спеки работают на macOS и на Windows. На Windows проверены `devices`, `record` (с микрофоном и `--no-mic`), остановка и публикация `win-x64`; расшифровка на Windows ещё не запускалась — нет скачанных моделей.
 
 Проверка шага 9 на реальной 8-минутной записи: одиночный файл — 1 мин 10 с (из них ≈ 20 с — первая компиляция CoreML), 5 спикеров; папка сессии с синтетическим `mic.wav` (44,1 кГц стерео) и `offsetMs = 20000` — 44 с, «Я» на 00:00:20, при `--speakers 6` ровно 5 спикеров + «Я».
 
 ## Осталось
 
-Предлагаемый порядок: 15–16 → 13.
+Предлагаемый порядок: 16 → 15.
 
 **Этапы 1–2 спеки — расшифровка готовой записи**
 
@@ -38,14 +39,14 @@
 
 **Этап 4 — запись на macOS** — готов (шаги 11–12).
 
-**Этап 3 — запись на Windows**
+**Этап 3 — запись на Windows** — готов (шаг 13).
 
-- [ ] **13. `Meetrec.Capture.Windows`:** NAudio `WasapiCapture` + `WasapiLoopbackCapture`, дописывание тишины в loopback по `Stopwatch`, ресемплинг при записи, `devices`. Проверка возможна только на Windows-машине — уточнить у пользователя, есть ли она.
+- [ ] **Приёмка этапа 3:** часовая запись созвона в Teams или Zoom, длительность обоих WAV совпадает с реальной в пределах 1 с. Проверено только на коротких записях (21 с), живого микрофона на машине нет.
 
 **Этап 5 — релиз**
 
 - [ ] **15. CI** `.github/workflows/release.yml` по тегу `v*`: тесты, сборка Swift, publish, архивы `meetrec-<ver>-win-x64.zip` / `meetrec-<ver>-osx-arm64.tar.gz`, GitHub Release.
-- [ ] **16. README:** написан для текущего состояния (сборка из исходников, разрешения macOS, команды, имена спикеров, модели, советы). Дописать вместе с шагами 14 и 13: установка из архива, `xattr -d com.apple.quarantine meetrec meetrec-capture`, Windows 10 vs 11 (Whisper.net требует 11 + VC++ Redist 2022), запись на Windows.
+- [ ] **16. README:** написан для текущего состояния (сборка из исходников, разрешения macOS и Windows, команды, запись на Windows, имена спикеров, модели, советы). Дописать вместе с шагом 15: установка из архива, `xattr -d com.apple.quarantine meetrec meetrec-capture`, Windows 10 vs 11 (Whisper.net требует 11 + VC++ Redist 2022).
 
 **Открытые вопросы**
 
@@ -56,7 +57,11 @@
 - Ctrl+C в интерактивном терминале не проверен вживую (в тестах — SIGTERM, у фоновых процессов неинтерактивного shell SIGINT игнорируется). Терминал шлёт SIGINT всей группе, хелпер получит его сам и закроет файлы — путь штатный.
 
 - Реплики, где вопрос и ответ разных людей склеены — смена спикера без паузы не ловится.
-- Сборка `win-x64` не запускалась на Windows (шаг 14 проверен только на macOS).
+- Запись на Windows с живым микрофоном не проверена: на машине только виртуальный «Steam Streaming Microphone» (дорожка пишется, но в ней тишина). Проверить на настоящем созвоне.
+- Расшифровка на Windows не запускалась — моделей на машине нет; рантаймы Whisper (CPU и Vulkan) в сборке `win-x64` лежат, но не загружались.
+- Ctrl+C в интерактивной консоли Windows не проверен: тестировалось Ctrl+Break (тот же обработчик `Interrupts`), потому что дочернему процессу в своей группе Windows Ctrl+C не доставляет.
+- Смена устройства во время записи на Windows не проверена. У `WasapiRecorderBuilder` есть `WithDefaultDeviceStreamRouting()` — Windows сам переводит поток на новое устройство по умолчанию; требует `BuildAsync` и не даёт имени устройства.
+- На Windows 10 ничего не проверялось (машина — Windows 11).
 - Расшифровка на macOS 14 (Whisper.net требует 15.0) не проверялась.
 - CoreML-энкодер скачивается на любом macOS (`OperatingSystem.IsMacOS()`); на Intel-Mac CoreML-рантайм не проверялся.
 - `record` (шаг 12) должен писать `session.json` через `SessionFile.Write`; `run` — переиспользовать `TranscribeCommand.RunAsync` и `TranscribeOptions`.

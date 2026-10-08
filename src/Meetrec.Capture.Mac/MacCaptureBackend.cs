@@ -9,6 +9,11 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
 {
     public const string HelperFileName = "meetrec-capture";
 
+    public const string SystemDeviceName = "Системный звук (Core Audio Process Tap)";
+
+    private const string SettingsHint =
+        "Выдайте его приложению терминала: Системные настройки → Конфиденциальность и безопасность → {0}. После этого перезапустите терминал.";
+
     private const int SigInt = 2;
     private const int NoPermissionExitCode = 2;
     private const int NoDeviceExitCode = 3;
@@ -20,6 +25,16 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
     private Task<int>? _exitCode;
 
     public event Action<LevelInfo>? Levels;
+
+    public CaptureHints Hints { get; } = new(
+        PermissionUnknown: "ещё не запрашивалось (macOS спросит при первой записи)",
+        PermissionPending: "macOS спросит разрешение на запись звука — ответьте «Разрешить», запись начнётся после этого.",
+        MicrophoneDenied: "Нет разрешения на микрофон. " + string.Format(SettingsHint, "Микрофон"),
+        SystemAudioDenied: "Нет разрешения на запись системного звука — собеседники не запишутся. "
+            + string.Format(SettingsHint, "Запись звука и экрана → «Только системный звук»"),
+        SystemSilence: "Если собеседники уже говорят, у терминала нет разрешения «Запись звука и экрана» (Системные настройки → Конфиденциальность и безопасность).",
+        SlowStart: "Запись ещё не началась. Если macOS спрашивает разрешение на микрофон или запись звука — ответьте на запрос; "
+            + "иначе выбранный микрофон не отдаёт звук (см. meetrec devices).");
 
     public Task Exited => _exitCode ?? Task.CompletedTask;
 
@@ -170,7 +185,7 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
         switch (HelperMessage.Parse(line))
         {
             case HelperMessage.Started started:
-                _started.TrySetResult(new CaptureStarted(started.OffsetMs));
+                _started.TrySetResult(new CaptureStarted(started.OffsetMs, SystemDeviceName));
                 break;
             case HelperMessage.Level level:
                 Levels?.Invoke(level.Info);

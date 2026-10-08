@@ -10,8 +10,15 @@ internal sealed class Interrupts : IDisposable
     private readonly PosixSignalRegistration[] _registrations;
     private CancellationTokenSource _phase = new();
 
+    // SIGQUIT is Ctrl+Break in a Windows console: without a handler it kills the process outright, leaving the
+    // WAV files of a recording unclosed.
     public Interrupts() =>
-        _registrations = [PosixSignalRegistration.Create(PosixSignal.SIGINT, Handle), PosixSignalRegistration.Create(PosixSignal.SIGTERM, Handle)];
+        _registrations =
+        [
+            PosixSignalRegistration.Create(PosixSignal.SIGINT, Handle),
+            PosixSignalRegistration.Create(PosixSignal.SIGQUIT, Handle),
+            PosixSignalRegistration.Create(PosixSignal.SIGTERM, Handle),
+        ];
 
     public CancellationToken Current
     {

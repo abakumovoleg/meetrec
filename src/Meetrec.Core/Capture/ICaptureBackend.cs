@@ -4,6 +4,8 @@ public interface ICaptureBackend : IAsyncDisposable
 {
     event Action<LevelInfo>? Levels;
 
+    CaptureHints Hints { get; }
+
     // Completes when the capture process ends, whether stopped or failed on its own.
     Task Exited { get; }
 
@@ -18,7 +20,7 @@ public interface ICaptureBackend : IAsyncDisposable
 
 public sealed record CaptureOptions(string? MicUid, bool NoMic);
 
-public sealed record CaptureStarted(int OffsetMs);
+public sealed record CaptureStarted(int OffsetMs, string SystemDevice);
 
 public enum PermissionStatus
 {

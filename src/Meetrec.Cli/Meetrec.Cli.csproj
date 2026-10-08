@@ -42,6 +42,7 @@
     <ProjectReference Include="..\Meetrec.Asr\Meetrec.Asr.csproj" />
     <ProjectReference Include="..\Meetrec.Diarization\Meetrec.Diarization.csproj" />
     <ProjectReference Include="..\Meetrec.Capture.Mac\Meetrec.Capture.Mac.csproj" />
+    <ProjectReference Include="..\Meetrec.Capture.Windows\Meetrec.Capture.Windows.csproj" />
   </ItemGroup>
 
   <!-- Whisper.net copies native libraries for every platform as plain files; publish only the target one. -->
