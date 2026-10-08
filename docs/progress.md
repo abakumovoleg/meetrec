@@ -20,7 +20,7 @@
 | 7б | `SpeechRepair`: регионы речи, где Whisper почти не дал слов (< 0,25 коротких слов/с), распознаются повторно отдельными окнами; итог `transcribe` не считает «Спикер ?» спикером | `1cd8c52` |
 | 12+ | Разрешение на системный звук: проверка (`TCCAccessPreflight`) и явный запрос (`TCCAccessRequest`) в хелпере, `--check-permissions`, отказ до старта записи, статус в `meetrec devices`. Порог громкости −60 дБFS для регионов VAD (`SpeechLevel`) — убирает «Thank you.» на молчащем микрофоне | `2791737` |
 | 17 | Имена спикеров (вне спеки): команда `meetrec names` и диалог в конце `transcribe`/`run` (`--no-names`); карточка спикера с примерами фраз и прослушиванием через `afplay`, подсказка имени по обращению перед ответом (`NameHints`), склейка спикеров с одним именем, `TranscriptReader`, метка диаризации `label` в json | `dd5c1bb` |
-| 14 | Публикация `dotnet publish -r osx-arm64|win-x64`: single-file self-contained `meetrec`, нативные библиотеки папкой рядом (Whisper.net не находит распакованные), фильтр рантаймов Whisper по RID, `meetrec-capture` в папке публикации; рантаймы Whisper перенесены в `Meetrec.Cli`, CUDA убрана; минимальная macOS для расшифровки — 15.0 | — |
+| 14 | Публикация `dotnet publish -r osx-arm64|win-x64`: single-file self-contained `meetrec`, нативные библиотеки папкой рядом (Whisper.net не находит распакованные), фильтр рантаймов Whisper по RID, `meetrec-capture` в папке публикации; рантаймы Whisper перенесены в `Meetrec.Cli`, CUDA убрана; минимальная macOS для расшифровки — 15.0 | `e653806` |
 
 143 юнит-теста в `tests/Meetrec.Core.Tests` (`dotnet test`) и 15 в `native/meetrec-capture` (`swift test`), все зелёные.
 
