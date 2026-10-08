@@ -22,10 +22,11 @@
 | 17 | Имена спикеров (вне спеки): команда `meetrec names` и диалог в конце `transcribe`/`run` (`--no-names`); карточка спикера с примерами фраз и прослушиванием через `afplay`, подсказка имени по обращению перед ответом (`NameHints`), склейка спикеров с одним именем, `TranscriptReader`, метка диаризации `label` в json | `dd5c1bb` |
 | 13 | `Meetrec.Capture.Windows` (`WindowsCaptureBackend` на NAudio 3.1 `WasapiRecorder`: микрофон и loopback устройства вывода по умолчанию, 16 кГц моно при записи, тишина loopback дописывается по таймстампам QPC, `offsetMs` = 0); `Wav16Writer`, `Mono16kResampler`, `CaptureTrack` в `Meetrec.Core`; платформенные тексты — в `CaptureHints` у бэкенда; UTF-8 в консоли Windows; Ctrl+Break (`SIGQUIT`) как Ctrl+C | `cbffe9c` |
 | 14 | Публикация `dotnet publish -r osx-arm64|win-x64`: single-file self-contained `meetrec`, нативные библиотеки папкой рядом (Whisper.net не находит распакованные), фильтр рантаймов Whisper по RID, `meetrec-capture` в папке публикации; рантаймы Whisper перенесены в `Meetrec.Cli`, CUDA убрана; минимальная macOS для расшифровки — 15.0 | `e653806` |
+| 17б | Проигрывание фраз спикера в диалоге имён на Windows: `WindowsClipOutput` на `WasapiPlayer` (NAudio 3.1, общий режим, устройство вывода по умолчанию), `ClipPlayer` выбирает вывод по платформе и возвращает текст ошибки вместо исключения, Ctrl+C прерывает проигрывание | `—` |
 
 165 юнит-тестов в `tests/Meetrec.Core.Tests` (`dotnet test`) и 15 в `native/meetrec-capture` (`swift test`), все зелёные.
 
-Все команды спеки работают на macOS и на Windows. На Windows проверены `devices`, `record` (с микрофоном и `--no-mic`), остановка и публикация `win-x64`; расшифровка на Windows ещё не запускалась — нет скачанных моделей.
+Все команды спеки работают на macOS и на Windows. На Windows проверены `devices`, `record` (с микрофоном и `--no-mic`), остановка, публикация `win-x64` и диалог имён с проигрыванием фраз; расшифровка на Windows ещё не запускалась — нет скачанных моделей.
 
 Проверка шага 9 на реальной 8-минутной записи: одиночный файл — 1 мин 10 с (из них ≈ 20 с — первая компиляция CoreML), 5 спикеров; папка сессии с синтетическим `mic.wav` (44,1 кГц стерео) и `offsetMs = 20000` — 44 с, «Я» на 00:00:20, при `--speakers 6` ровно 5 спикеров + «Я».
 

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Meetrec.Core.Audio;
 using NAudio.Wave;
 
@@ -12,13 +13,41 @@ internal sealed class ClipPlayer(string audioPath)
 
     private AudioClip? _audio;
 
-    public static bool IsSupported => OperatingSystem.IsMacOS();
+    public static bool IsSupported => OperatingSystem.IsMacOS() || OperatingSystem.IsWindows();
 
-    public TimeSpan Play(TimeSpan start, TimeSpan end)
+    // Returns the error message, or null when the clip has been played.
+    public string? Play(TimeSpan start, TimeSpan end, CancellationToken ct)
     {
-        _audio ??= AudioLoader.LoadMono16k(audioPath);
-        var clip = _audio.Slice(start - Padding, (end - start > MaxClip ? start + MaxClip : end) + Padding);
+        try
+        {
+            _audio ??= AudioLoader.LoadMono16k(audioPath);
+            var clip = _audio.Slice(start - Padding, (end - start > MaxClip ? start + MaxClip : end) + Padding);
 
+            if (OperatingSystem.IsWindows())
+            {
+                WindowsClipOutput.Play(clip, ct);
+            }
+            else
+            {
+                PlayWithAfplay(clip);
+            }
+
+            return null;
+        }
+        // Ctrl+C during playback: the dialog ends on the next prompt, nothing to report here.
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+        catch (Exception e) when (e is IOException or ExternalException or InvalidOperationException
+            or NotSupportedException or InvalidDataException or ArgumentException)
+        {
+            return e.Message;
+        }
+    }
+
+    private static void PlayWithAfplay(AudioClip clip)
+    {
         var path = Path.Combine(Path.GetTempPath(), $"meetrec-{Guid.NewGuid():N}.wav");
         try
         {
@@ -30,7 +59,6 @@ internal sealed class ClipPlayer(string audioPath)
             using var player = Process.Start(new ProcessStartInfo("afplay", [path]) { UseShellExecute = false })
                 ?? throw new IOException("Не удалось запустить afplay");
             player.WaitForExit();
-            return clip.Duration;
         }
         finally
         {

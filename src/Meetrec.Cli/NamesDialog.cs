@@ -27,7 +27,7 @@ internal static class NamesDialog
 
         foreach (var profile in SpeakerProfiles.Build(byLabel))
         {
-            var name = Ask(profile, names[profile.Label], hints.GetValueOrDefault(profile.Label), player);
+            var name = Ask(profile, names[profile.Label], hints.GetValueOrDefault(profile.Label), player, ct);
             if (ct.IsCancellationRequested)
             {
                 err.WriteLine("Имена не сохранены.");
@@ -57,7 +57,7 @@ internal static class NamesDialog
         return SpeakerNames.Apply(utterances, names);
     }
 
-    private static string? Ask(SpeakerProfile profile, string currentName, NameHint? hint, ClipPlayer? player)
+    private static string? Ask(SpeakerProfile profile, string currentName, NameHint? hint, ClipPlayer? player, CancellationToken ct)
     {
         var err = Console.Error;
         err.WriteLine();
@@ -91,7 +91,11 @@ internal static class NamesDialog
                 case "p" or "з" when player is not null:
                     var utterance = profile.LongestUtterances[played++ % profile.LongestUtterances.Count];
                     err.WriteLine($"  ▶ [{Formatting.Clock(utterance.Start)}] {Shorten(utterance.Text)}");
-                    player.Play(utterance.Start, utterance.End);
+                    if (player.Play(utterance.Start, utterance.End, ct) is { } error)
+                    {
+                        err.WriteLine($"  Не удалось проиграть: {error}");
+                    }
+
                     break;
                 default:
                     return line;

@@ -27,6 +27,8 @@
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Whisper.net.Runtime" />
+    <!-- Playback of speaker clips in the names dialog (WasapiPlayer). -->
+    <PackageReference Include="NAudio.Wasapi" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetsMac)' == 'true'">
