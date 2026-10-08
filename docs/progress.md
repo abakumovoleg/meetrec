@@ -45,7 +45,7 @@
 
 - [ ] **14. Публикация** single-file self-contained под `osx-arm64` и `win-x64`; решить с нативными библиотеками whisper.cpp/sherpa-onnx (`IncludeNativeLibrariesForSelfExtract` или папка); `meetrec-capture` рядом с `meetrec`, поиск через `AppContext.BaseDirectory`; запуск на чистой машине без .NET.
 - [ ] **15. CI** `.github/workflows/release.yml` по тегу `v*`: тесты, сборка Swift, publish, архивы `meetrec-<ver>-win-x64.zip` / `meetrec-<ver>-osx-arm64.tar.gz`, GitHub Release.
-- [ ] **16. README:** установка, разрешения macOS (выдаются терминалу), `xattr -d com.apple.quarantine`, Windows 10 vs 11 (Whisper.net требует 11 + VC++ Redist 2022), рекомендация `--model small` без GPU, наушники против эха.
+- [ ] **16. README:** написан для текущего состояния (сборка из исходников, разрешения macOS, команды, имена спикеров, модели, советы). Дописать вместе с шагами 14 и 13: установка из архива, `xattr -d com.apple.quarantine meetrec meetrec-capture`, Windows 10 vs 11 (Whisper.net требует 11 + VC++ Redist 2022), запись на Windows.
 
 **Открытые вопросы**
 
