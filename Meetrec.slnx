@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Meetrec.Asr/Meetrec.Asr.csproj" />
+    <Project Path="src/Meetrec.Cli/Meetrec.Cli.csproj" />
+    <Project Path="src/Meetrec.Core/Meetrec.Core.csproj" />
+    <Project Path="src/Meetrec.Diarization/Meetrec.Diarization.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Meetrec.Core.Tests/Meetrec.Core.Tests.csproj" />
+  </Folder>
+</Solution>

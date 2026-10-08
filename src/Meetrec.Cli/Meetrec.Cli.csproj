@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>meetrec</AssemblyName>
+    <RootNamespace>Meetrec.Cli</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Meetrec.Core\Meetrec.Core.csproj" />
+    <ProjectReference Include="..\Meetrec.Asr\Meetrec.Asr.csproj" />
+    <ProjectReference Include="..\Meetrec.Diarization\Meetrec.Diarization.csproj" />
+  </ItemGroup>
+
+</Project>
