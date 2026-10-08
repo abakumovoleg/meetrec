@@ -5,7 +5,7 @@ namespace Meetrec.Cli;
 
 internal static class ModelsCommand
 {
-    public static Command Create()
+    public static Command Create(Interrupts interrupts)
     {
         var command = new Command("models", "Скачанные модели и их пути");
         command.SetAction(_ => List());
@@ -16,7 +16,7 @@ internal static class ModelsCommand
             Arity = ArgumentArity.OneOrMore,
         };
         var download = new Command("download", "Скачать модели заранее") { id };
-        download.SetAction((parse, ct) => DownloadAsync(parse.GetRequiredValue(id), ct));
+        download.SetAction(parse => DownloadAsync(parse.GetRequiredValue(id), interrupts.Current));
         command.Subcommands.Add(download);
 
         return command;

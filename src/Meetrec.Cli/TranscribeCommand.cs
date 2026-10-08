@@ -13,7 +13,7 @@ namespace Meetrec.Cli;
 
 internal static class TranscribeCommand
 {
-    public static Command Create()
+    public static Command Create(Interrupts interrupts)
     {
         var input = new Argument<string>("input")
         {
@@ -22,11 +22,11 @@ internal static class TranscribeCommand
         var options = new TranscribeOptions();
         var command = new Command("transcribe", "Расшифровать готовую запись") { input };
         options.AddTo(command);
-        command.SetAction((parse, ct) => ExecuteAsync(parse.GetRequiredValue(input), options.Read(parse), ct));
+        command.SetAction(parse => ExecuteAsync(parse.GetRequiredValue(input), options.Read(parse), interrupts.Current));
         return command;
     }
 
-    private static async Task<int> ExecuteAsync(string path, TranscribeSettings settings, CancellationToken ct)
+    public static async Task<int> ExecuteAsync(string path, TranscribeSettings settings, CancellationToken ct)
     {
         try
         {
@@ -48,7 +48,7 @@ internal static class TranscribeCommand
         }
     }
 
-    public static async Task RunAsync(TranscribeInput input, TranscribeSettings settings, CancellationToken ct)
+    private static async Task RunAsync(TranscribeInput input, TranscribeSettings settings, CancellationToken ct)
     {
         var total = Stopwatch.StartNew();
         if (input.HasMicTrack && input.Session is null)

@@ -14,6 +14,17 @@
     <ProjectReference Include="..\Meetrec.Core\Meetrec.Core.csproj" />
     <ProjectReference Include="..\Meetrec.Asr\Meetrec.Asr.csproj" />
     <ProjectReference Include="..\Meetrec.Diarization\Meetrec.Diarization.csproj" />
+    <ProjectReference Include="..\Meetrec.Capture.Mac\Meetrec.Capture.Mac.csproj" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <CaptureHelperDir>$(MSBuildThisFileDirectory)..\..\native\meetrec-capture</CaptureHelperDir>
+  </PropertyGroup>
+
+  <!-- meetrec looks for meetrec-capture next to itself, so on macOS the Swift helper is built and copied into the output. -->
+  <Target Name="BuildCaptureHelper" AfterTargets="Build" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <Exec Command="swift build -c release --arch arm64 --package-path &quot;$(CaptureHelperDir)&quot;" StandardOutputImportance="low" />
+    <Copy SourceFiles="$(CaptureHelperDir)/.build/release/meetrec-capture" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>
