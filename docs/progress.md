@@ -17,7 +17,7 @@
 | 9 | `meetrec transcribe` end-to-end: `TranscribeInput` (папка сессии или WAV), `SessionFile` (чтение/запись `session.json`), `TranscriptionModels` (автоскачивание), прогресс по этапам, вывод `transcript.*` / `<имя>.transcript.*` | `089486b` |
 | 11 | Swift-хелпер `native/meetrec-capture`: Process Tap + приватный агрегат только с тапом, микрофон через `AVAudioEngine`, `AVAudioConverter` → 16 кГц моно, протокол stdout, SIGINT/SIGTERM, коды 2/3, `--list-devices`; библиотека `CaptureKit` + 13 тестов swift-testing | `7c21e53` |
 | 12 | `Meetrec.Capture.Mac` (`MacCaptureBackend`: запуск хелпера, протокол, остановка через SIGINT), `ICaptureBackend` и помощники в `Meetrec.Core/Capture`; команды `record`, `run`, `devices`; индикатор уровней, предупреждение о 10 с нулей, `session.json`; свой обработчик Ctrl+C (`Interrupts`); `dotnet build` на Mac собирает хелпер. Микрофон в хелпере переведён с `AVAudioEngine` на IOProc | `e6bf67a` |
-| 7б | `SpeechRepair`: регионы речи, где Whisper почти не дал слов (< 0,25 коротких слов/с), распознаются повторно отдельными окнами; итог `transcribe` не считает «Спикер ?» спикером | следующий после `e6bf67a` |
+| 7б | `SpeechRepair`: регионы речи, где Whisper почти не дал слов (< 0,25 коротких слов/с), распознаются повторно отдельными окнами; итог `transcribe` не считает «Спикер ?» спикером | `1cd8c52` |
 
 108 юнит-тестов в `tests/Meetrec.Core.Tests` (`dotnet test`) и 13 в `native/meetrec-capture` (`swift test`), все зелёные.
 
