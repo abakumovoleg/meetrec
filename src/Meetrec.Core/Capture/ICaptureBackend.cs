@@ -9,6 +9,8 @@ public interface ICaptureBackend : IAsyncDisposable
 
     Task<IReadOnlyList<MicrophoneDevice>> ListMicrophonesAsync(CancellationToken ct);
 
+    Task<CapturePermissions> CheckPermissionsAsync(CancellationToken ct);
+
     Task<CaptureStarted> StartAsync(string sessionDir, CaptureOptions options, CancellationToken ct);
 
     Task StopAsync();
@@ -17,6 +19,15 @@ public interface ICaptureBackend : IAsyncDisposable
 public sealed record CaptureOptions(string? MicUid, bool NoMic);
 
 public sealed record CaptureStarted(int OffsetMs);
+
+public enum PermissionStatus
+{
+    Unknown,
+    Granted,
+    Denied,
+}
+
+public sealed record CapturePermissions(PermissionStatus Microphone, PermissionStatus SystemAudio);
 
 public readonly record struct LevelInfo(float? Mic, float System);
 

@@ -52,6 +52,11 @@ internal static class RecordCommand
                     Console.WriteLine($"{(device.IsDefault ? "*" : " ")} {device.Name}  ({device.Uid})");
                 }
 
+                var permissions = await backend.CheckPermissionsAsync(interrupts.Current);
+                Console.WriteLine();
+                Console.WriteLine($"Разрешение на микрофон: {Describe(permissions.Microphone)}");
+                Console.WriteLine($"Разрешение на системный звук: {Describe(permissions.SystemAudio)}");
+
                 return 0;
             }
             catch (CaptureException e)
@@ -75,6 +80,7 @@ internal static class RecordCommand
 
             await using var backend = CreateBackend();
             var stop = interrupts.Current;
+            ReportPermissions(await backend.CheckPermissionsAsync(stop), settings.NoMic);
             var mic = settings.NoMic ? null : await ResolveMicrophoneAsync(backend, settings.Mic, stop);
 
             Directory.CreateDirectory(directory);
@@ -115,6 +121,37 @@ internal static class RecordCommand
             return null;
         }
     }
+
+    private const string SettingsHint =
+        "Выдайте его приложению терминала: Системные настройки → Конфиденциальность и безопасность → {0}. После этого перезапустите терминал.";
+
+    private static void ReportPermissions(CapturePermissions permissions, bool noMic)
+    {
+        if (permissions.SystemAudio == PermissionStatus.Denied)
+        {
+            throw new CaptureException(
+                "Нет разрешения на запись системного звука — собеседники не запишутся. " +
+                string.Format(SettingsHint, "Запись звука и экрана → «Только системный звук»"));
+        }
+
+        if (!noMic && permissions.Microphone == PermissionStatus.Denied)
+        {
+            throw new CaptureException(
+                "Нет разрешения на микрофон. " + string.Format(SettingsHint, "Микрофон") + " Или запишите без него: --no-mic.");
+        }
+
+        if (permissions.SystemAudio == PermissionStatus.Unknown || (!noMic && permissions.Microphone == PermissionStatus.Unknown))
+        {
+            Console.Error.WriteLine("macOS спросит разрешение на запись звука — ответьте «Разрешить», запись начнётся после этого.");
+        }
+    }
+
+    private static string Describe(PermissionStatus status) => status switch
+    {
+        PermissionStatus.Granted => "есть",
+        PermissionStatus.Denied => "запрещено",
+        _ => "ещё не запрашивалось (macOS спросит при первой записи)",
+    };
 
     private static async Task<MicrophoneDevice> ResolveMicrophoneAsync(ICaptureBackend backend, string? query, CancellationToken ct)
     {

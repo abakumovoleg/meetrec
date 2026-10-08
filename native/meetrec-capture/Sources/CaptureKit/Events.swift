@@ -15,6 +15,10 @@ public enum Events {
         line([("t", "started"), ("offsetMs", offsetMs)])
     }
 
+    public static func permissions(mic: Permission, system: Permission) -> String {
+        line([("t", "permissions"), ("mic", mic.rawValue), ("system", system.rawValue)])
+    }
+
     public static func device(uid: String, name: String, isDefault: Bool) -> String {
         line([("t", "device"), ("uid", uid), ("name", name), ("default", isDefault)])
     }

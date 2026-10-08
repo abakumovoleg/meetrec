@@ -67,3 +67,36 @@ public class HelperMessageTests
         Assert.Null(message);
     }
 }
+
+public class HelperPermissionMessageTests
+{
+    [Fact]
+    public void Parse_Permissions_ReadsBothStatuses()
+    {
+        // Arrange
+        var line = """{"t":"permissions","mic":"granted","system":"denied"}""";
+
+        // Act
+        var message = HelperMessage.Parse(line);
+
+        // Assert
+        Assert.Equal(
+            new HelperMessage.Permissions(new CapturePermissions(PermissionStatus.Granted, PermissionStatus.Denied)),
+            message);
+    }
+
+    [Fact]
+    public void Parse_PermissionsWithUnexpectedValue_TreatsAsUnknown()
+    {
+        // Arrange
+        var line = """{"t":"permissions","mic":"restricted","system":"unknown"}""";
+
+        // Act
+        var message = HelperMessage.Parse(line);
+
+        // Assert
+        Assert.Equal(
+            new HelperMessage.Permissions(new CapturePermissions(PermissionStatus.Unknown, PermissionStatus.Unknown)),
+            message);
+    }
+}

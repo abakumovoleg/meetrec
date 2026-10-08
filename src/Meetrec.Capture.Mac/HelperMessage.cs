@@ -31,6 +31,9 @@ internal abstract record HelperMessage
                     root.GetProperty("uid").GetString()!,
                     root.GetProperty("name").GetString()!,
                     root.GetProperty("default").GetBoolean())),
+                "permissions" => new Permissions(new CapturePermissions(
+                    ParsePermission(root.GetProperty("mic").GetString()),
+                    ParsePermission(root.GetProperty("system").GetString()))),
                 _ => null,
             };
         }
@@ -40,7 +43,16 @@ internal abstract record HelperMessage
         }
     }
 
+    private static PermissionStatus ParsePermission(string? value) => value switch
+    {
+        "granted" => PermissionStatus.Granted,
+        "denied" => PermissionStatus.Denied,
+        _ => PermissionStatus.Unknown,
+    };
+
     public sealed record Started(int OffsetMs) : HelperMessage;
+
+    public sealed record Permissions(CapturePermissions Status) : HelperMessage;
 
     public sealed record Level(LevelInfo Info) : HelperMessage;
 

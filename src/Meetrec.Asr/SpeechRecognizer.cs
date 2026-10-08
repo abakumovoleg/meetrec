@@ -8,8 +8,8 @@ public sealed class SpeechRecognizer(WhisperTranscriber whisper, SileroVad vad)
     public async Task<IReadOnlyList<Word>> RecognizeAsync(
         AudioClip clip, string language, IProgress<int>? progress, CancellationToken ct)
     {
-        var mask = SpeechMask.Build(
-            vad.Detect(clip.Samples, clip.SampleRate), clip.Duration, SpeechMask.DefaultPadding, SpeechMask.DefaultMergeGap);
+        var regions = SpeechLevel.DropQuiet(clip, vad.Detect(clip.Samples, clip.SampleRate), SpeechLevel.DefaultMinDbfs);
+        var mask = SpeechMask.Build(regions, clip.Duration, SpeechMask.DefaultPadding, SpeechMask.DefaultMergeGap);
         if (mask.IsEmpty)
         {
             progress?.Report(100);

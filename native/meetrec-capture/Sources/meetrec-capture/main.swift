@@ -24,7 +24,21 @@ func listDevices() -> Never {
     exit(ExitCode.ok.rawValue)
 }
 
+func checkPermissions() -> Never {
+    emit(Events.permissions(mic: Permissions.microphone, system: Permissions.systemAudio))
+    exit(ExitCode.ok.rawValue)
+}
+
 func record(outputDirectory: String, micUID: String?, noMic: Bool) -> Never {
+    var systemAudio = Permissions.systemAudio
+    if systemAudio == .unknown {
+        systemAudio = Permissions.requestSystemAudio()
+    }
+
+    if systemAudio == .denied {
+        fail("Нет разрешения на запись системного звука. Выдайте его терминалу: Системные настройки → Конфиденциальность и безопасность → Запись звука и экрана → «Только системный звук».", .noPermission)
+    }
+
     var micDevice: InputDevice?
     if !noMic {
         guard Microphone.ensurePermission() else {
@@ -130,6 +144,8 @@ case .help:
     print(Arguments.usage)
 case .listDevices:
     listDevices()
+case .checkPermissions:
+    checkPermissions()
 case let .record(outputDirectory, micUID, noMic):
     record(outputDirectory: outputDirectory, micUID: micUID, noMic: noMic)
 }

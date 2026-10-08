@@ -47,3 +47,17 @@ struct EventsTests {
         #expect(line == #"{"t":"device","uid":"a/b","name":"Микрофон \"USB\"","default":true}"#)
     }
 }
+
+struct PermissionEventsTests {
+    @Test func permissions_writesBothStatuses() {
+        // Arrange
+        let mic = Permission.granted
+        let system = Permission.denied
+
+        // Act
+        let line = Events.permissions(mic: mic, system: system)
+
+        // Assert
+        #expect(line == #"{"t":"permissions","mic":"granted","system":"denied"}"#)
+    }
+}

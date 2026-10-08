@@ -29,19 +29,12 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
         return File.Exists(path) ? path : null;
     }
 
-    public async Task<IReadOnlyList<MicrophoneDevice>> ListMicrophonesAsync(CancellationToken ct)
-    {
-        using var process = Process.Start(CreateStartInfo(["--list-devices"]))!;
-        var stdout = process.StandardOutput.ReadToEndAsync(ct);
-        var stderr = process.StandardError.ReadToEndAsync(ct);
-        await process.WaitForExitAsync(ct);
-        if (process.ExitCode != 0)
-        {
-            throw new CaptureException($"Не удалось получить список микрофонов: {(await stderr).Trim()}");
-        }
+    public async Task<IReadOnlyList<MicrophoneDevice>> ListMicrophonesAsync(CancellationToken ct) =>
+        [.. (await QueryAsync("--list-devices", "список микрофонов", ct)).OfType<HelperMessage.Device>().Select(d => d.Microphone)];
 
-        return [.. (await stdout).Split('\n').Select(HelperMessage.Parse).OfType<HelperMessage.Device>().Select(d => d.Microphone)];
-    }
+    public async Task<CapturePermissions> CheckPermissionsAsync(CancellationToken ct) =>
+        (await QueryAsync("--check-permissions", "статус разрешений", ct)).OfType<HelperMessage.Permissions>().FirstOrDefault()?.Status
+        ?? new CapturePermissions(PermissionStatus.Unknown, PermissionStatus.Unknown);
 
     public async Task<CaptureStarted> StartAsync(string sessionDir, CaptureOptions options, CancellationToken ct)
     {
@@ -135,6 +128,20 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
         }
     }
 
+    private async Task<IReadOnlyList<HelperMessage>> QueryAsync(string flag, string what, CancellationToken ct)
+    {
+        using var process = Process.Start(CreateStartInfo([flag]))!;
+        var stdout = process.StandardOutput.ReadToEndAsync(ct);
+        var stderr = process.StandardError.ReadToEndAsync(ct);
+        await process.WaitForExitAsync(ct);
+        if (process.ExitCode != 0)
+        {
+            throw new CaptureException($"Не удалось получить {what}: {(await stderr).Trim()}");
+        }
+
+        return [.. (await stdout).Split('\n').Select(HelperMessage.Parse).OfType<HelperMessage>()];
+    }
+
     private ProcessStartInfo CreateStartInfo(IEnumerable<string> args)
     {
         if (!File.Exists(helperPath))
@@ -191,7 +198,7 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
 
         var reason = code switch
         {
-            NoPermissionExitCode => "Нет разрешения на запись. Выдайте его терминалу: Системные настройки → Конфиденциальность и безопасность → Микрофон и «Запись звука и экрана».",
+            NoPermissionExitCode => "Нет разрешения на запись.",
             NoDeviceExitCode => "Микрофон не найден или недоступен (см. meetrec devices).",
             _ => $"Хелпер записи завершился с кодом {code}.",
         };

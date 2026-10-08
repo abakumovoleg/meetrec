@@ -1,6 +1,7 @@
 public enum Command: Equatable {
     case record(outputDirectory: String, micUID: String?, noMic: Bool)
     case listDevices
+    case checkPermissions
     case help
 }
 
@@ -12,6 +13,7 @@ public enum Arguments {
     public static let usage = """
         meetrec-capture --out <sessionDir> [--mic <uid>] [--no-mic]
         meetrec-capture --list-devices
+        meetrec-capture --check-permissions
         """
 
     public static func parse(_ args: [String]) throws -> Command {
@@ -19,6 +21,7 @@ public enum Arguments {
         var mic: String?
         var noMic = false
         var listDevices = false
+        var checkPermissions = false
 
         var iterator = args.makeIterator()
         while let arg = iterator.next() {
@@ -31,11 +34,17 @@ public enum Arguments {
                 noMic = true
             case "--list-devices":
                 listDevices = true
+            case "--check-permissions":
+                checkPermissions = true
             case "--help", "-h":
                 return .help
             default:
                 throw ArgumentError(description: "Неизвестный аргумент: \(arg)")
             }
+        }
+
+        if checkPermissions {
+            return .checkPermissions
         }
 
         if listDevices {

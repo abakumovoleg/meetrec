@@ -24,6 +24,17 @@ struct ArgumentsTests {
         #expect(command == .listDevices)
     }
 
+    @Test func parse_checkPermissions_returnsCheck() throws {
+        // Arrange
+        let args = ["--check-permissions"]
+
+        // Act
+        let command = try Arguments.parse(args)
+
+        // Assert
+        #expect(command == .checkPermissions)
+    }
+
     @Test(arguments: [
         ["--mic", "x"],
         ["--out"],
