@@ -1,13 +1,11 @@
 using System.CommandLine;
+using Meetrec.Core.Models;
 using Meetrec.Core.Output;
 
 namespace Meetrec.Cli;
 
 internal static class CliCommands
 {
-    private static readonly string[] ModelNames =
-        ["tiny", "base", "small", "medium", "large-v3", "large-v3-turbo"];
-
     private static readonly string[] Languages = ["ru", "en", "auto"];
 
     public static Command Record()
@@ -46,13 +44,6 @@ internal static class CliCommands
         return command;
     }
 
-    public static Command Models()
-    {
-        var command = new Command("models", "Скачанные модели и их пути");
-        command.SetAction(_ => NotImplemented("models"));
-        return command;
-    }
-
     private static void AddRecordOptions(Command command)
     {
         command.Options.Add(new Option<DirectoryInfo>("--output", "-o")
@@ -83,8 +74,8 @@ internal static class CliCommands
         command.Options.Add(new Option<string>("--model")
         {
             Description = "Модель Whisper",
-            DefaultValueFactory = _ => "large-v3-turbo",
-        }.AcceptOnlyFromAmong(ModelNames));
+            DefaultValueFactory = _ => ModelCatalog.DefaultWhisper,
+        }.AcceptOnlyFromAmong([.. ModelCatalog.WhisperNames]));
         command.Options.Add(new Option<string[]>("--format")
         {
             Description = "Форматы вывода через запятую: md,json,srt",

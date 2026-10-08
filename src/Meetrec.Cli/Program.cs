@@ -7,7 +7,7 @@ var root = new RootCommand("meetrec — запись созвонов и лок�
     CliCommands.Transcribe(),
     CliCommands.Run(),
     CliCommands.Devices(),
-    CliCommands.Models(),
+    ModelsCommand.Create(),
 };
 
 return await root.Parse(args).InvokeAsync();
