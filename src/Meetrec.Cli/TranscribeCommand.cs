@@ -83,8 +83,13 @@ internal static class TranscribeCommand
 
         ct.ThrowIfCancellationRequested();
         var diarizationProgress = new ConsoleStageProgress("Диаризация");
-        var segments = new SpeakerDiarizer(store.PathOf(ModelCatalog.PyannoteSegmentation), store.PathOf(diarization.Embedding))
-            .Diarize(system, diarization.NumClusters, diarization.Threshold, diarizationProgress);
+        IReadOnlyList<DiarSegment> segments;
+        using (new BackgroundPriority())
+        {
+            segments = new SpeakerDiarizer(store.PathOf(ModelCatalog.PyannoteSegmentation), store.PathOf(diarization.Embedding))
+                .Diarize(system, diarization.NumClusters, diarization.Threshold, diarizationProgress);
+        }
+
         diarizationProgress.Complete();
 
         var utterances = TranscriptMerger.Merge(micWords, systemWords, segments, input.OffsetMs);
