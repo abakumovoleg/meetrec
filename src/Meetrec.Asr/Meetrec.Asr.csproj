@@ -1,5 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <TargetsMac Condition="'$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX'))">true</TargetsMac>
+    <TargetsMac Condition="$(RuntimeIdentifier.StartsWith('osx'))">true</TargetsMac>
+    <TargetsWindows Condition="'$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows'))">true</TargetsWindows>
+    <TargetsWindows Condition="$(RuntimeIdentifier.StartsWith('win'))">true</TargetsWindows>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Whisper.net" />
+    <PackageReference Include="Whisper.net.Runtime" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetsMac)' == 'true'">
+    <PackageReference Include="Whisper.net.Runtime.CoreML" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetsWindows)' == 'true'">
+    <PackageReference Include="Whisper.net.Runtime.Cuda" />
+    <PackageReference Include="Whisper.net.Runtime.Vulkan" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Meetrec.Core\Meetrec.Core.csproj" />
   </ItemGroup>
