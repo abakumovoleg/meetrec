@@ -19,7 +19,7 @@
 | 12 | `Meetrec.Capture.Mac` (`MacCaptureBackend`: запуск хелпера, протокол, остановка через SIGINT), `ICaptureBackend` и помощники в `Meetrec.Core/Capture`; команды `record`, `run`, `devices`; индикатор уровней, предупреждение о 10 с нулей, `session.json`; свой обработчик Ctrl+C (`Interrupts`); `dotnet build` на Mac собирает хелпер. Микрофон в хелпере переведён с `AVAudioEngine` на IOProc | `e6bf67a` |
 | 7б | `SpeechRepair`: регионы речи, где Whisper почти не дал слов (< 0,25 коротких слов/с), распознаются повторно отдельными окнами; итог `transcribe` не считает «Спикер ?» спикером | `1cd8c52` |
 | 12+ | Разрешение на системный звук: проверка (`TCCAccessPreflight`) и явный запрос (`TCCAccessRequest`) в хелпере, `--check-permissions`, отказ до старта записи, статус в `meetrec devices`. Порог громкости −60 дБFS для регионов VAD (`SpeechLevel`) — убирает «Thank you.» на молчащем микрофоне | `2791737` |
-| 17 | Имена спикеров (вне спеки): команда `meetrec names` и диалог в конце `transcribe`/`run` (`--no-names`); карточка спикера с примерами фраз и прослушиванием через `afplay`, подсказка имени по обращению перед ответом (`NameHints`), склейка спикеров с одним именем, `TranscriptReader`, метка диаризации `label` в json | — |
+| 17 | Имена спикеров (вне спеки): команда `meetrec names` и диалог в конце `transcribe`/`run` (`--no-names`); карточка спикера с примерами фраз и прослушиванием через `afplay`, подсказка имени по обращению перед ответом (`NameHints`), склейка спикеров с одним именем, `TranscriptReader`, метка диаризации `label` в json | `dd5c1bb` |
 
 143 юнит-теста в `tests/Meetrec.Core.Tests` (`dotnet test`) и 15 в `native/meetrec-capture` (`swift test`), все зелёные.
 
