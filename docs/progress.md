@@ -14,9 +14,10 @@
 | 6 | `WhisperTranscriber` (Whisper.net 1.9.1, `SplitOnWord`, CoreML на Mac) | `fa222a6` |
 | 7 | `SileroVad` + `SpeechMask` — VAD после распознавания (отступление от спеки, см. decisions); `SpeechRecognizer` связывает VAD и Whisper | `a793360` |
 | 8 | `SpeakerDiarizer` (sherpa-onnx), `DiarizationSettings.Choose` — eres2net при `--speakers`, wespeaker с порогом 0,6 без него | `77755c1` |
-| 9 | `meetrec transcribe` end-to-end: `TranscribeInput` (папка сессии или WAV), `SessionFile` (чтение/запись `session.json`), `TranscriptionModels` (автоскачивание), прогресс по этапам, вывод `transcript.*` / `<имя>.transcript.*` | следующий после `6953d32` |
+| 9 | `meetrec transcribe` end-to-end: `TranscribeInput` (папка сессии или WAV), `SessionFile` (чтение/запись `session.json`), `TranscriptionModels` (автоскачивание), прогресс по этапам, вывод `transcript.*` / `<имя>.transcript.*` | `089486b` |
+| 11 | Swift-хелпер `native/meetrec-capture`: Process Tap + приватный агрегат только с тапом, микрофон через `AVAudioEngine`, `AVAudioConverter` → 16 кГц моно, протокол stdout, SIGINT/SIGTERM, коды 2/3, `--list-devices`; библиотека `CaptureKit` + 13 тестов swift-testing | следующий после `089486b` |
 
-79 юнит-тестов в `tests/Meetrec.Core.Tests`, все зелёные (`dotnet test`).
+79 юнит-тестов в `tests/Meetrec.Core.Tests` (`dotnet test`) и 13 в `native/meetrec-capture` (`swift test`), все зелёные.
 
 **Ещё не подключено к CLI:** `record`, `run`, `devices` — заглушки. Работают `transcribe`, `models`, `models download`.
 
@@ -24,7 +25,7 @@
 
 ## Осталось
 
-Предлагаемый порядок: 11–12 → 14–16 → 13.
+Предлагаемый порядок: 12 → 14–16 → 13.
 
 **Этапы 1–2 спеки — расшифровка готовой записи**
 
@@ -32,8 +33,7 @@
 
 **Этап 4 — запись на macOS**
 
-- [ ] **11. Swift-хелпер `native/meetrec-capture`** (Swift Package, `swift build -c release --arch arm64`): Core Audio Process Tap (глобальный моно-тап, приватный агрегат только с тапом — иначе эхо), микрофон через `AVAudioEngine`, `AVAudioConverter` → 16 кГц моно, два WAV; stdout — JSON-строки `{"t":"level",...}` и `{"t":"started","offsetMs":N}`; SIGINT → корректное закрытие; коды выхода 2 (нет разрешения) и 3 (нет устройства). Референс — AudioCap, Meetily `core_audio.rs`.
-- [ ] **12. `Meetrec.Capture.Mac` + CLI:** `ICaptureBackend` (запуск хелпера, протокол), команды `record`, `run`, `devices`; индикатор уровней раз в секунду; предупреждение, если системный канал — нули первые 10 с; Ctrl+C всегда даёт валидные WAV; `session.json`. Проверить знак `offsetMs` против трактовки в `Merge` (см. decisions).
+- [ ] **12. `Meetrec.Capture.Mac` + CLI:** `ICaptureBackend` (запуск хелпера, протокол), команды `record`, `run`, `devices`; индикатор уровней раз в секунду; предупреждение, если системный канал — нули первые 10 с; Ctrl+C всегда даёт валидные WAV; `session.json`. Знак `offsetMs` хелпера совпадает с `Merge` (мик позже системы, не бывает отрицательным). Учесть: при первом запуске хелпер висит в ожидании диалога TCC — показать подсказку, если `started` не пришёл за несколько секунд. Список микрофонов на Mac — `meetrec-capture --list-devices`.
 
 **Этап 3 — запись на Windows**
 
@@ -46,6 +46,9 @@
 - [ ] **16. README:** установка, разрешения macOS (выдаются терминалу), `xattr -d com.apple.quarantine`, Windows 10 vs 11 (Whisper.net требует 11 + VC++ Redist 2022), рекомендация `--model small` без GPU, наушники против эха.
 
 **Открытые вопросы**
+
+- Хелпер не переживает смену устройства во время записи (`AVAudioEngineConfigurationChange`, отключение наушников): микрофон остановится, системная дорожка продолжит писаться. Ресемплер смену частоты уже переносит.
+- Запись микрофона с реальной речью хелпером ещё не проверена (в прогоне шага 11 в микрофон никто не говорил); проверить в шаге 12.
 
 - Реплики, где вопрос и ответ разных людей склеены — смена спикера без паузы не ловится.
 - Размер пакета `Whisper.net.Runtime.Cuda` на Windows и его влияние на архив.

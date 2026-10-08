@@ -18,6 +18,7 @@ CLI-рекордер встреч на .NET 10: запись двух дорож
 
 - `dotnet build`, `dotnet test` (раннер Microsoft.Testing.Platform, задан в `global.json`). Предупреждения — ошибки.
 - Версии пакетов — в `Directory.Packages.props`.
+- Swift-хелпер: `cd native/meetrec-capture && swift build -c release --arch arm64 && swift test`. Живая запись требует разрешений TCC у терминала — при первом запуске нужен клик пользователя.
 
 ## Окружение для замеров
 
