@@ -83,10 +83,9 @@ internal static class CliCommands
             CustomParser = r => r.Tokens.SelectMany(t => t.Value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)).ToArray(),
             Validators = { r => ValidateFormats(r) },
         });
-        command.Options.Add(new Option<double>("--threshold")
+        command.Options.Add(new Option<float?>("--threshold")
         {
-            Description = "Порог кластеризации спикеров, если не задан --speakers",
-            DefaultValueFactory = _ => 0.5,
+            Description = $"Порог кластеризации спикеров, если не задан --speakers (по умолчанию {DiarizationSettings.WespeakerThreshold.ToString(System.Globalization.CultureInfo.InvariantCulture)}); больше — меньше спикеров",
         });
     }
 
