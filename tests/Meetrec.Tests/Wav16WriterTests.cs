@@ -1,4 +1,3 @@
-using Meetrec.Capture.Windows;
 using Meetrec.Core.Audio;
 
 namespace Meetrec.Tests;

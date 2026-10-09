@@ -30,6 +30,7 @@
     <ProjectReference Include="..\Meetrec.Pipeline\Meetrec.Pipeline.csproj" />
     <ProjectReference Include="..\Meetrec.Capture.Mac\Meetrec.Capture.Mac.csproj" />
     <ProjectReference Include="..\Meetrec.Capture.Windows\Meetrec.Capture.Windows.csproj" />
+    <ProjectReference Include="..\Meetrec.Capture.Meetzone\Meetrec.Capture.Meetzone.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +45,11 @@
       <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.metal' and !$(RuntimeIdentifier.StartsWith('osx-'))" />
     </ItemGroup>
   </Target>
+
+  <!-- The browser extension for Meetzone recording ships next to meetrec, to be loaded unpacked into Chrome. -->
+  <ItemGroup>
+    <None Include="..\..\browser\meetzone\**\*" Exclude="..\..\browser\meetzone\test\**" LinkBase="meetzone-extension" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 
   <PropertyGroup>
     <CaptureHelperDir>$(MSBuildThisFileDirectory)..\..\native\meetrec-capture</CaptureHelperDir>

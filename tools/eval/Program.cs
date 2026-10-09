@@ -10,6 +10,7 @@ const string Usage = """
                                                                 только распознавание, слова с таймкодами в json
       timing <fixtures> [--options …] [--model …]              точность таймкодов на синтетике (say -v Milena)
       meetzone <probe.json> <папка>                             сессия участников из записи отладочного расширения Meetzone
+      meetzone-replay <probe.json> [--port 47823]               проиграть запись в meetrec record --meetzone, как расширение
       options                                                   параметры распознавания по умолчанию в json
     """;
 
@@ -23,6 +24,7 @@ try
         "recognize" => await RecognizeCommand.ExecuteAsync(parsed),
         "timing" => await TimingCommand.ExecuteAsync(parsed),
         "meetzone" => MeetzoneCommand.Execute(parsed),
+        "meetzone-replay" => await MeetzoneReplayCommand.ExecuteAsync(parsed),
         "options" => OptionsFile.Print(),
         _ => throw new MeetrecException(Usage),
     };

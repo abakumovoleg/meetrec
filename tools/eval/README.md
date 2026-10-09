@@ -14,6 +14,7 @@ $E compare tools/eval/data/baseline out        # md/json/srt побайтно, �
 $E recognize meeting.wav words.json [--options opts.json] [--lang ru] [--model large-v3-turbo]
 $E timing tools/eval/data/fixtures [--options opts.json]   # таймкоды слов на синтетике, фикстуры создаются через say
 $E meetzone meetzone/<probe>.json tools/eval/data/inputs/meetzone   # сессия участников из записи отладочного расширения
+$E meetzone-replay meetzone/<probe>.json   # проиграть ту же запись в запущенный `meetrec record --meetzone`, как расширение
 ```
 
 `cases.json` — список случаев, пути относительно файла:

@@ -13,7 +13,7 @@ internal static class RecordCommand
     public static Command Record(Interrupts interrupts)
     {
         var options = new RecordOptions();
-        var command = new Command("record", "Записать микрофон и системный звук в папку сессии");
+        var command = new Command("record", "Записать микрофон и системный звук (или созвон Meetzone) в папку сессии");
         options.AddTo(command);
         command.SetAction(async parse =>
         {
@@ -67,6 +67,13 @@ internal static class RecordCommand
             if (Directory.Exists(directory) && SessionLayout.ContainsRecording(directory))
             {
                 throw new CaptureException($"В папке уже есть запись: {directory}");
+            }
+
+            if (settings.Meetzone)
+            {
+                CreateDirectory(directory);
+                await MeetzoneRecording.RecordAsync(directory, interrupts.Current);
+                return directory;
             }
 
             await using var backend = Platform.CreateCaptureBackend();
@@ -158,7 +165,7 @@ internal static class RecordCommand
                 : $"Микрофон «{query}» не найден или найдено несколько. Доступны: {string.Join(", ", devices.Select(d => d.Name))}");
     }
 
-    private static void CreateDirectory(string directory)
+    internal static void CreateDirectory(string directory)
     {
         try
         {

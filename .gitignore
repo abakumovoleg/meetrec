@@ -485,7 +485,7 @@ $RECYCLE.BIN/
 meetings/
 
 # Local Meetzone research: probe logs contain tokens and colleagues' voices
-meetzone/
+/meetzone/
 
 # Ad-hoc transcription outputs in the repo root
 /out*/

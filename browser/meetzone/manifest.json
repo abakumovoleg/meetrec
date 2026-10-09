@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "meetrec для Meetzone",
+  "version": "0.1.0",
+  "description": "Отдаёт meetrec звук созвона Meetzone дорожкой на каждого участника",
+  "background": { "service_worker": "worker.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://chatzone.o3t.ru/*"],
+      "js": ["lib.js", "page.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": ["https://chatzone.o3t.ru/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ]
+}

@@ -16,7 +16,9 @@ public static class SessionLayout
     public static string TranscriptPath(string directory, string name, string format) => Path.Combine(directory, $"{name}.{format}");
 
     public static bool ContainsRecording(string directory) =>
-        File.Exists(Path.Combine(directory, SystemFile)) || File.Exists(Path.Combine(directory, MicFile));
+        File.Exists(Path.Combine(directory, SessionFileName))
+        || File.Exists(Path.Combine(directory, SystemFile))
+        || File.Exists(Path.Combine(directory, MicFile));
 
     public static string TrackId(string file) => Path.GetFileNameWithoutExtension(file);
 

@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\src\Meetrec.Cli\Meetrec.Cli.csproj" />
     <ProjectReference Include="..\..\src\Meetrec.Capture.Mac\Meetrec.Capture.Mac.csproj" />
     <ProjectReference Include="..\..\src\Meetrec.Capture.Windows\Meetrec.Capture.Windows.csproj" />
+    <ProjectReference Include="..\..\src\Meetrec.Capture.Meetzone\Meetrec.Capture.Meetzone.csproj" />
   </ItemGroup>
 
 </Project>

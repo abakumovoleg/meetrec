@@ -3,7 +3,7 @@ using Meetrec.Core.Capture;
 
 namespace Meetrec.Cli;
 
-internal sealed class RecordingStatus(string silenceHint)
+internal sealed class RecordingStatus(string silenceHint = "")
 {
     private static readonly TimeSpan RedirectedInterval = TimeSpan.FromSeconds(30);
 
@@ -33,16 +33,15 @@ internal sealed class RecordingStatus(string silenceHint)
             }
 
             var mic = levels.Mic is { } m ? $"  Я {LevelBar.Render(m)}" : "";
-            var line = $"● {elapsed:hh\\:mm\\:ss}{mic}  Собеседники {LevelBar.Render(levels.System)}";
-            if (!Console.IsErrorRedirected)
-            {
-                Console.Error.Write($"\r{line}\u001b[K");
-            }
-            else if (elapsed - _lastRedirectedLine >= RedirectedInterval)
-            {
-                _lastRedirectedLine = elapsed;
-                Console.Error.WriteLine(line);
-            }
+            Show(elapsed, $"{mic}  Собеседники {LevelBar.Render(levels.System)}");
+        }
+    }
+
+    public void Show(string details)
+    {
+        lock (_gate)
+        {
+            Show(_elapsed.Elapsed, details);
         }
     }
 
@@ -51,6 +50,20 @@ internal sealed class RecordingStatus(string silenceHint)
         lock (_gate)
         {
             Console.Error.WriteLine(Console.IsErrorRedirected ? message : $"\r\u001b[K{message}");
+        }
+    }
+
+    private void Show(TimeSpan elapsed, string details)
+    {
+        var line = $"● {elapsed:hh\\:mm\\:ss}{details}";
+        if (!Console.IsErrorRedirected)
+        {
+            Console.Error.Write($"\r{line}\u001b[K");
+        }
+        else if (elapsed - _lastRedirectedLine >= RedirectedInterval)
+        {
+            _lastRedirectedLine = elapsed;
+            Console.Error.WriteLine(line);
         }
     }
 }

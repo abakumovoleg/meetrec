@@ -70,7 +70,7 @@ internal static class MeetzoneCommand
         return 0;
     }
 
-    private static Dictionary<string, Person> Presences(List<JsonElement> events)
+    internal static Dictionary<string, Person> Presences(List<JsonElement> events)
     {
         var people = new Dictionary<string, Person>();
         foreach (var e in events.Where(e => e.GetProperty("k").GetString() == "ws.in"))
@@ -169,7 +169,7 @@ internal static class MeetzoneCommand
         }
     }
 
-    private sealed record Person(string Login, string Name, bool Own);
+    internal sealed record Person(string Login, string Name, bool Own);
 
     private sealed record Slot(Person Person, TimeSpan Start, AudioClip Clip);
 }
