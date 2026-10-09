@@ -22,11 +22,11 @@
 
 ## R1. Единая обработка ошибок — коммит: —
 
-- [ ] `MeetrecException` в `Meetrec.Core` — ошибка для пользователя (текст без стека); `CaptureException` наследует её.
-- [ ] Ошибки ввода бросают `MeetrecException` вместо `ArgumentException`/`FileNotFoundException`: `TranscribeInput.Resolve`, `ModelCatalog.Find`, `NamesCommand` («нет transcript.json»), `SpeakerDiarizer` (частота).
-- [ ] Ошибки загрузки моделей (`HttpRequestException`, обрыв в `ModelStore`) и чтения файлов (`JsonException`, `InvalidDataException`, `IOException`) оборачиваются в `MeetrecException` там, где известен контекст (какой файл, какая модель).
-- [ ] Один обработчик в `Program`: `MeetrecException` → «Ошибка: …», код 1; `OperationCanceledException` при Ctrl+C → «Прервано.», 130; прочее → сообщение и стек в stderr, код 70. Убрать списки `catch … when (e is …)` из команд.
-- [ ] Тесты на перевод исключений, где он в Core.
+- [x] `MeetrecException` в `Meetrec.Core` — ошибка для пользователя (текст без стека); `CaptureException` наследует её.
+- [x] Ошибки ввода бросают `MeetrecException` вместо `ArgumentException`/`FileNotFoundException`: `TranscribeInput.Resolve`, `ModelCatalog.Find`, `NamesCommand` («нет transcript.json»), `SpeakerDiarizer` (частота).
+- [x] Ошибки загрузки моделей (`HttpRequestException`, обрыв в `ModelStore`) и чтения файлов (`JsonException`, `InvalidDataException`, `IOException`) оборачиваются в `MeetrecException` там, где известен контекст (какой файл, какая модель).
+- [x] Один обработчик в `Program`: `MeetrecException` → «Ошибка: …», код 1; `OperationCanceledException` при Ctrl+C → «Прервано.», 130; прочее → сообщение и стек в stderr, код 70. Убрать списки `catch … when (e is …)` из команд.
+- [x] Тесты на перевод исключений, где он в Core.
 
 Готово, когда: в командах нет фильтров по типам исключений; ошибка Whisper.net/sherpa-onnx не роняет процесс без сообщения.
 

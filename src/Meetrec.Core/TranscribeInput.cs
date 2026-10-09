@@ -24,12 +24,12 @@ public sealed record TranscribeInput(string? MicPath, string SystemPath, Session
 
         if (!File.Exists(full))
         {
-            throw new FileNotFoundException($"Нет такого файла или папки: {path}", full);
+            throw new MeetrecException($"Нет такого файла или папки: {path}");
         }
 
         if (!Path.GetExtension(full).Equals(".wav", StringComparison.OrdinalIgnoreCase))
         {
-            throw new ArgumentException($"Ожидается WAV-файл или папка сессии: {path}");
+            throw new MeetrecException($"Ожидается WAV-файл или папка сессии: {path}");
         }
 
         // A lone file gets its own output names so that several recordings in one folder do not overwrite
@@ -43,7 +43,7 @@ public sealed record TranscribeInput(string? MicPath, string SystemPath, Session
         var system = Path.Combine(directory, SystemFileName);
         if (!File.Exists(system))
         {
-            throw new FileNotFoundException($"В папке сессии нет {SystemFileName}: {directory}", system);
+            throw new MeetrecException($"В папке сессии нет {SystemFileName}: {directory}");
         }
 
         var mic = Path.Combine(directory, MicFileName);

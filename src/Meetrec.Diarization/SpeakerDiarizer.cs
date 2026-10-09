@@ -1,3 +1,4 @@
+using Meetrec.Core;
 using Meetrec.Core.Audio;
 using Meetrec.Core.Transcript;
 using SherpaOnnx;
@@ -22,7 +23,7 @@ public sealed class SpeakerDiarizer(string segmentationModelPath, string embeddi
         using var diarization = new OfflineSpeakerDiarization(config);
         if (diarization.SampleRate != clip.SampleRate)
         {
-            throw new ArgumentException($"Диаризация ждёт {diarization.SampleRate} Гц, получено {clip.SampleRate} Гц", nameof(clip));
+            throw new MeetrecException($"Диаризация ждёт {diarization.SampleRate} Гц, получено {clip.SampleRate} Гц");
         }
 
         var callback = new OfflineSpeakerDiarizationProgressCallback((processed, total, _) =>

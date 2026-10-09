@@ -14,10 +14,28 @@ public static class SessionFile
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    public static Session Read(string path) =>
-        JsonSerializer.Deserialize<Session>(File.ReadAllText(path), Options)
-        ?? throw new InvalidDataException($"Пустой {FileName}: {path}");
+    public static Session Read(string path)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<Session>(File.ReadAllText(path), Options)
+                ?? throw new MeetrecException($"Пустой {FileName}: {path}");
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
+        {
+            throw new MeetrecException($"Не удалось прочитать {path}: {e.Message}", e);
+        }
+    }
 
-    public static void Write(string path, Session session) =>
-        File.WriteAllText(path, JsonSerializer.Serialize(session, Options).ReplaceLineEndings("\n") + "\n");
+    public static void Write(string path, Session session)
+    {
+        try
+        {
+            File.WriteAllText(path, JsonSerializer.Serialize(session, Options).ReplaceLineEndings("\n") + "\n");
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            throw new MeetrecException($"Не удалось записать {path}: {e.Message}", e);
+        }
+    }
 }

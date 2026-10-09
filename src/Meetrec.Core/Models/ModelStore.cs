@@ -32,6 +32,10 @@ public sealed class ModelStore(string root)
             await DownloadAsync(http, model, part, progress, ct);
             Install(model, part, target);
         }
+        catch (Exception e) when (e is HttpRequestException or IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            throw new MeetrecException($"Не удалось скачать {model.Id} ({model.Url}): {e.Message}", e);
+        }
         finally
         {
             File.Delete(part);
@@ -45,8 +49,7 @@ public sealed class ModelStore(string root)
         using var response = await http.GetAsync(model.Url, HttpCompletionOption.ResponseHeadersRead, ct);
         if (!response.IsSuccessStatusCode)
         {
-            throw new HttpRequestException(
-                $"Не удалось скачать {model.Id} ({model.Url}): HTTP {(int)response.StatusCode}", null, response.StatusCode);
+            throw new MeetrecException($"Не удалось скачать {model.Id} ({model.Url}): HTTP {(int)response.StatusCode}");
         }
 
         var total = response.Content.Headers.ContentLength;
@@ -66,7 +69,7 @@ public sealed class ModelStore(string root)
 
         if (total is { } expected && received != expected)
         {
-            throw new IOException($"Загрузка {model.Id} оборвалась: получено {received} из {expected} байт");
+            throw new MeetrecException($"Загрузка {model.Id} оборвалась: получено {received} из {expected} байт");
         }
     }
 
@@ -90,7 +93,7 @@ public sealed class ModelStore(string root)
                     var extracted = Path.Combine(staging, model.InstallName);
                     if (!Directory.Exists(extracted))
                     {
-                        throw new InvalidDataException($"В архиве {model.Id} нет папки {model.InstallName}");
+                        throw new MeetrecException($"В архиве {model.Id} нет папки {model.InstallName}");
                     }
 
                     Directory.Move(extracted, target);

@@ -56,7 +56,7 @@ public static class ModelCatalog
     }
 
     public static ModelInfo Find(string id) =>
-        TryFind(id, out var model) ? model : throw new ArgumentException($"Неизвестная модель: {id}", nameof(id));
+        TryFind(id, out var model) ? model : throw new MeetrecException($"Неизвестная модель: {id}. Список: meetrec models");
 
     public static ModelInfo WhisperModel(string name) => Find($"whisper-{name}");
 

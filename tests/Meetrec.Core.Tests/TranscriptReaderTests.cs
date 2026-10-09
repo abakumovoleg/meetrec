@@ -31,4 +31,19 @@ public sealed class TranscriptReaderTests : IDisposable
         Assert.Equal(Track.System, result[1].Track);
         Assert.Equal(utterances[1].Words, result[1].Words);
     }
+
+    [Fact]
+    public void Read_BrokenJson_ThrowsWithPath()
+    {
+        // Arrange
+        var path = Path.Combine(_dir, "transcript.json");
+        File.WriteAllText(path, "{ \"utterances\": [");
+
+        // Act
+        var act = () => TranscriptReader.Read(path);
+
+        // Assert
+        var error = Assert.Throws<MeetrecException>(act);
+        Assert.Contains(path, error.Message);
+    }
 }

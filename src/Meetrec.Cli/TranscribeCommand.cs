@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.Diagnostics;
-using System.Text.Json;
 using Meetrec.Asr;
 using Meetrec.Core;
 using Meetrec.Core.Audio;
@@ -28,24 +27,8 @@ internal static class TranscribeCommand
 
     public static async Task<int> ExecuteAsync(string path, TranscribeSettings settings, CancellationToken ct)
     {
-        try
-        {
-            var input = TranscribeInput.Resolve(path);
-            await RunAsync(input, settings, ct);
-            return 0;
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-        {
-            Console.Error.WriteLine();
-            Console.Error.WriteLine("Прервано.");
-            return 130;
-        }
-        catch (Exception e) when (e is IOException or ArgumentException or HttpRequestException or JsonException or InvalidDataException or FormatException)
-        {
-            Console.Error.WriteLine();
-            Console.Error.WriteLine($"Ошибка: {e.Message}");
-            return 1;
-        }
+        await RunAsync(TranscribeInput.Resolve(path), settings, ct);
+        return 0;
     }
 
     private static async Task RunAsync(TranscribeInput input, TranscribeSettings settings, CancellationToken ct)

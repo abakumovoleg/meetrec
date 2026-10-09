@@ -39,4 +39,33 @@ public sealed class SessionFileTests : IDisposable
         Assert.Equal(0, session.OffsetMs);
         Assert.Null(session.MicDevice);
     }
+
+    [Fact]
+    public void Read_BrokenJson_ThrowsWithPath()
+    {
+        // Arrange
+        var path = Path.Combine(_dir, SessionFile.FileName);
+        File.WriteAllText(path, "{ не json");
+
+        // Act
+        var act = () => SessionFile.Read(path);
+
+        // Assert
+        var error = Assert.Throws<MeetrecException>(act);
+        Assert.Contains(path, error.Message);
+    }
+
+    [Fact]
+    public void Read_NullJson_Throws()
+    {
+        // Arrange
+        var path = Path.Combine(_dir, SessionFile.FileName);
+        File.WriteAllText(path, "null");
+
+        // Act
+        var act = () => SessionFile.Read(path);
+
+        // Assert
+        Assert.Throws<MeetrecException>(act);
+    }
 }

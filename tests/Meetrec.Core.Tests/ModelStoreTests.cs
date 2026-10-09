@@ -88,7 +88,7 @@ public sealed class ModelStoreTests : IDisposable
         var act = () => store.EnsureAsync(FileModel(), new HttpClient(handler), null, TestContext.Current.CancellationToken);
 
         // Assert
-        var error = await Assert.ThrowsAsync<HttpRequestException>(act);
+        var error = await Assert.ThrowsAsync<MeetrecException>(act);
         Assert.Contains("404", error.Message);
         Assert.False(store.IsInstalled(FileModel()));
         Assert.Empty(Directory.GetFileSystemEntries(_root));
@@ -105,8 +105,43 @@ public sealed class ModelStoreTests : IDisposable
         var act = () => store.EnsureAsync(FileModel(), new HttpClient(handler), null, TestContext.Current.CancellationToken);
 
         // Assert
-        await Assert.ThrowsAnyAsync<IOException>(act);
+        var error = await Assert.ThrowsAsync<MeetrecException>(act);
+        Assert.Contains("test-file", error.Message);
         Assert.False(store.IsInstalled(FileModel()));
+        Assert.Empty(Directory.GetFileSystemEntries(_root));
+    }
+
+    [Fact]
+    public async Task EnsureAsync_NetworkFailure_ThrowsWithModelAndInstallsNothing()
+    {
+        // Arrange
+        var handler = new FakeHttpHandler(_ => throw new HttpRequestException("Connection refused"));
+        var store = new ModelStore(_root);
+
+        // Act
+        var act = () => store.EnsureAsync(FileModel(), new HttpClient(handler), null, TestContext.Current.CancellationToken);
+
+        // Assert
+        var error = await Assert.ThrowsAsync<MeetrecException>(act);
+        Assert.Contains("test-file", error.Message);
+        Assert.Contains("Connection refused", error.Message);
+        Assert.IsType<HttpRequestException>(error.InnerException);
+        Assert.False(store.IsInstalled(FileModel()));
+    }
+
+    [Fact]
+    public async Task EnsureAsync_CorruptZip_ThrowsAndCleansUp()
+    {
+        // Arrange
+        var handler = new FakeHttpHandler(_ => FakeHttpHandler.Bytes("это не zip"u8.ToArray()));
+        var store = new ModelStore(_root);
+
+        // Act
+        var act = () => store.EnsureAsync(ZipModel(), new HttpClient(handler), null, TestContext.Current.CancellationToken);
+
+        // Assert
+        var error = await Assert.ThrowsAsync<MeetrecException>(act);
+        Assert.Contains("test-zip", error.Message);
         Assert.Empty(Directory.GetFileSystemEntries(_root));
     }
 
@@ -157,7 +192,7 @@ public sealed class ModelStoreTests : IDisposable
         var act = () => store.EnsureAsync(ZipModel(), new HttpClient(handler), null, TestContext.Current.CancellationToken);
 
         // Assert
-        await Assert.ThrowsAsync<InvalidDataException>(act);
+        await Assert.ThrowsAsync<MeetrecException>(act);
         Assert.Empty(Directory.GetFileSystemEntries(_root));
     }
 }

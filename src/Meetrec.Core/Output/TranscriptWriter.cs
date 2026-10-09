@@ -28,9 +28,14 @@ public static class TranscriptWriter
             }
 
             var path = PathOf(directory, fileNameWithoutExtension, formatter.Format);
-            using (var writer = new StreamWriter(path, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)))
+            try
             {
+                using var writer = new StreamWriter(path, append: false, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
                 formatter.Write(utterances, writer);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                throw new MeetrecException($"Не удалось записать {path}: {e.Message}", e);
             }
 
             paths.Add(path);

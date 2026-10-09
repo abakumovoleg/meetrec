@@ -315,6 +315,14 @@ sherpa-onnx `OfflineSpeakerDiarization`: сегментация pyannote 3.0 (`W
 - **Зависимости только системные:** `otool -L` не находит путей вне `/usr/lib`, `/System` и `@rpath`. Бинарники подписаны ad-hoc (SDK и `swift build`), нотаризации нет.
 - **Проверка на этой машине:** опубликованный `osx-arm64` из папки с пробелом в пути, с окружением `env -i HOME PATH=/usr/bin:/bin` — `devices` (через хелпер) и `transcribe` (CoreML, 49 с на 8 мин). Чистой машины без .NET нет; self-contained сборка .NET с диска не загружает. `win-x64`, собранный на Windows 11, запускается: `devices`, `--version`, запись (шаг 13).
 
+## Обработка ошибок (рефакторинг R1)
+
+- **Один обработчик в `Program`**, стандартный обработчик System.CommandLine выключен (`EnableDefaultExceptionHandler = false`). `MeetrecException` → «Ошибка: …», код 1; `OperationCanceledException` после Ctrl+C/SIGTERM (`Interrupts.Interrupted`) → «Прервано.», 130; прочее → «Внутренняя ошибка meetrec» со стеком, 70 (`EX_SOFTWARE`). Команды исключений не ловят; `record` только удаляет пустую папку сессии и пробрасывает дальше.
+- **`MeetrecException` бросается там, где известен контекст** — какой файл, какая модель: `TranscribeInput`, `SessionFile`, `TranscriptReader`/`TranscriptWriter`, `AudioLoader`, `ModelStore` (сеть, обрыв, битый архив — с id и URL модели), `ModelCatalog.Find`, `WhisperTranscriber.Load`, создание папки записи. `CaptureException` — её наследник.
+- **Модель Whisper загружается в `Load`:** Whisper.net читает файл лениво, при первом `CreateBuilder`; без этого битый файл падал внутренней ошибкой посреди распознавания. `Load` вызывает `CreateBuilder()` сразу — вывод на эталонной записи не изменился.
+- **Остались локальные `catch` с фильтрами там, где ошибка не завершает команду:** `ClipPlayer` (нет звука — диалог имён продолжается), `BackgroundPriority` (приоритет не понизился — не страшно), `HelperMessage` (битая строка протокола), бэкенды захвата (перевод COM/кодов хелпера в `CaptureException`). `TranscriptWriter` с неизвестным форматом по-прежнему бросает `ArgumentException` — формат проверяет разбор опций, до записи это не доходит.
+- **Ошибки sherpa-onnx** в .NET почти не долетают (падение в нативном коде); долетевшие идут в «внутреннюю ошибку» со стеком.
+
 ## Оценка качества
 
 Стенд замеров пока одноразовый, в `/tmp/meetrec-eval` (не в репозитории): синтетические фикстуры через `say -v Milena`, реальная запись — локальный файл, в репозиторий её класть нельзя. Если замеры понадобятся регулярно — перенести стенд в `tools/eval` с фикстурами без персональных данных.

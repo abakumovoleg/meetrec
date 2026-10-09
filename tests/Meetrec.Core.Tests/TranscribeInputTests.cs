@@ -50,7 +50,7 @@ public sealed class TranscribeInputTests : IDisposable
         var act = () => TranscribeInput.Resolve(_dir);
 
         // Assert
-        Assert.Throws<FileNotFoundException>(act);
+        Assert.Throws<MeetrecException>(act);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public sealed class TranscribeInputTests : IDisposable
         var act = () => TranscribeInput.Resolve(file);
 
         // Assert
-        Assert.Throws<ArgumentException>(act);
+        Assert.Throws<MeetrecException>(act);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public sealed class TranscribeInputTests : IDisposable
         var act = () => TranscribeInput.Resolve(path);
 
         // Assert
-        Assert.Throws<FileNotFoundException>(act);
+        Assert.Throws<MeetrecException>(act);
     }
 
     private string Touch(string name)

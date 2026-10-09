@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Text;
 using Meetrec.Cli;
+using Meetrec.Core;
 
 // Every message here is in Russian, and a Windows console left on its OEM code page prints them as question
 // marks — including output redirected to a file.
@@ -35,5 +36,27 @@ var root = new RootCommand("meetrec — запись созвонов и лок�
     ModelsCommand.Create(interrupts),
 };
 
-// Ctrl+C is handled by Interrupts, so that `run` can stop recording without cancelling the transcription after it.
-return await root.Parse(args).InvokeAsync(new InvocationConfiguration { ProcessTerminationTimeout = null });
+try
+{
+    // Ctrl+C is handled by Interrupts, so that `run` can stop recording without cancelling the transcription after it.
+    return await root.Parse(args).InvokeAsync(
+        new InvocationConfiguration { ProcessTerminationTimeout = null, EnableDefaultExceptionHandler = false });
+}
+catch (MeetrecException e)
+{
+    Console.Error.WriteLine();
+    Console.Error.WriteLine($"Ошибка: {e.Message}");
+    return 1;
+}
+catch (OperationCanceledException) when (interrupts.Interrupted)
+{
+    Console.Error.WriteLine();
+    Console.Error.WriteLine("Прервано.");
+    return 130;
+}
+catch (Exception e)
+{
+    Console.Error.WriteLine();
+    Console.Error.WriteLine($"Внутренняя ошибка meetrec: {e}");
+    return 70;
+}

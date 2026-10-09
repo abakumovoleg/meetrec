@@ -9,6 +9,7 @@ internal sealed class Interrupts : IDisposable
     private readonly Lock _gate = new();
     private readonly PosixSignalRegistration[] _registrations;
     private CancellationTokenSource _phase = new();
+    private bool _interrupted;
 
     // SIGQUIT is Ctrl+Break in a Windows console: without a handler it kills the process outright, leaving the
     // WAV files of a recording unclosed.
@@ -27,6 +28,17 @@ internal sealed class Interrupts : IDisposable
             lock (_gate)
             {
                 return _phase.Token;
+            }
+        }
+    }
+
+    public bool Interrupted
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _interrupted;
             }
         }
     }
@@ -54,6 +66,7 @@ internal sealed class Interrupts : IDisposable
         lock (_gate)
         {
             phase = _phase;
+            _interrupted = true;
         }
 
         if (phase.IsCancellationRequested)

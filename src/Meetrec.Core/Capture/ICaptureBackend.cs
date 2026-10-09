@@ -33,4 +33,4 @@ public sealed record CapturePermissions(PermissionStatus Microphone, PermissionS
 
 public readonly record struct LevelInfo(float? Mic, float System);
 
-public sealed class CaptureException(string message) : Exception(message);
+public sealed class CaptureException(string message) : MeetrecException(message);

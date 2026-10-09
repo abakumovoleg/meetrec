@@ -1,3 +1,4 @@
+using Meetrec.Core;
 using Meetrec.Core.Transcript;
 using Whisper.net;
 using Whisper.net.LibraryLoader;
@@ -20,7 +21,21 @@ public sealed class WhisperTranscriber : IDisposable
 
     public static string? LoadedRuntime => RuntimeOptions.LoadedLibrary?.ToString();
 
-    public static WhisperTranscriber Load(string modelPath) => new(WhisperFactory.FromPath(modelPath));
+    public static WhisperTranscriber Load(string modelPath)
+    {
+        var factory = WhisperFactory.FromPath(modelPath);
+        try
+        {
+            // The model itself is loaded lazily by the first builder; a broken file should fail here, not mid-recognition.
+            factory.CreateBuilder();
+            return new(factory);
+        }
+        catch (WhisperModelLoadException e)
+        {
+            factory.Dispose();
+            throw new MeetrecException($"Не удалось загрузить модель Whisper {modelPath} — удалите файл, и он скачается заново: {e.Message}", e);
+        }
+    }
 
     public async Task<WhisperResult> TranscribeAsync(
         float[] samples, int sampleRate, string language, IProgress<int>? progress, CancellationToken ct)

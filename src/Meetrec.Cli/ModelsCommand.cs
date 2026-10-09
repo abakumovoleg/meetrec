@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Meetrec.Core;
 using Meetrec.Core.Models;
 
 namespace Meetrec.Cli;
@@ -45,8 +46,7 @@ internal static class ModelsCommand
         var unknown = ids.Where(id => !ModelCatalog.TryFind(id, out _)).ToList();
         if (unknown.Count > 0)
         {
-            Console.Error.WriteLine($"Неизвестные модели: {string.Join(", ", unknown)}. Список: meetrec models");
-            return 1;
+            throw new MeetrecException($"Неизвестные модели: {string.Join(", ", unknown)}. Список: meetrec models");
         }
 
         var models = ids.Select(ModelCatalog.Find).ToList();

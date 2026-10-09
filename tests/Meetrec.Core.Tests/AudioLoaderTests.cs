@@ -152,6 +152,7 @@ public sealed class AudioLoaderTests : IDisposable
         var act = () => AudioLoader.LoadMono16k(path);
 
         // Assert
-        Assert.ThrowsAny<Exception>(act);
+        var error = Assert.Throws<MeetrecException>(act);
+        Assert.Contains(path, error.Message);
     }
 }

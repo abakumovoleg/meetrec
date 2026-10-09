@@ -45,6 +45,6 @@ public class ModelCatalogTests
         var act = () => ModelCatalog.Find(id);
 
         // Assert
-        Assert.Throws<ArgumentException>(act);
+        Assert.Throws<MeetrecException>(act);
     }
 }

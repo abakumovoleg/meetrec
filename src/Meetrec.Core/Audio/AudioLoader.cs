@@ -9,6 +9,18 @@ public static class AudioLoader
 
     public static AudioClip LoadMono16k(string path)
     {
+        try
+        {
+            return Load(path);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or FormatException or InvalidDataException or ArgumentException)
+        {
+            throw new MeetrecException($"Не удалось прочитать {path}: {e.Message}", e);
+        }
+    }
+
+    private static AudioClip Load(string path)
+    {
         using var reader = new WaveFileReader(path);
         ISampleProvider provider = reader.ToSampleProvider();
 

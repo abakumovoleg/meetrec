@@ -55,4 +55,18 @@ public sealed class TranscriptWriterTests : IDisposable
             [Path.Combine(_dir, "call.transcript.md"), Path.Combine(_dir, "call.transcript.json")],
             paths);
     }
+
+    [Fact]
+    public void WriteAll_MissingDirectory_ThrowsWithPath()
+    {
+        // Arrange
+        var directory = Path.Combine(Path.GetTempPath(), "meetrec-tests-missing-" + Guid.NewGuid());
+
+        // Act
+        var act = () => TranscriptWriter.WriteAll(directory, [], ["md"]);
+
+        // Assert
+        var error = Assert.Throws<MeetrecException>(act);
+        Assert.Contains(directory, error.Message);
+    }
 }

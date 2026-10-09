@@ -15,7 +15,11 @@ internal static class RecordCommand
         var options = new RecordOptions();
         var command = new Command("record", "Записать микрофон и системный звук в папку сессии");
         options.AddTo(command);
-        command.SetAction(async parse => await ExecuteAsync(options.Read(parse), interrupts) is null ? 1 : 0);
+        command.SetAction(async parse =>
+        {
+            await ExecuteAsync(options.Read(parse), interrupts);
+            return 0;
+        });
         return command;
     }
 
@@ -29,11 +33,6 @@ internal static class RecordCommand
         command.SetAction(async parse =>
         {
             var directory = await ExecuteAsync(recordOptions.Read(parse), interrupts);
-            if (directory is null)
-            {
-                return 1;
-            }
-
             return await TranscribeCommand.ExecuteAsync(directory, transcribeOptions.Read(parse), interrupts.NextPhase());
         });
         return command;
@@ -44,31 +43,21 @@ internal static class RecordCommand
         var command = new Command("devices", "Список микрофонов");
         command.SetAction(async _ =>
         {
-            try
+            await using var backend = CreateBackend();
+            foreach (var device in await backend.ListMicrophonesAsync(interrupts.Current))
             {
-                await using var backend = CreateBackend();
-                foreach (var device in await backend.ListMicrophonesAsync(interrupts.Current))
-                {
-                    Console.WriteLine($"{(device.IsDefault ? "*" : " ")} {device.Name}  ({device.Uid})");
-                }
-
-                var permissions = await backend.CheckPermissionsAsync(interrupts.Current);
-                Console.WriteLine();
-                Console.WriteLine($"Разрешение на микрофон: {Describe(permissions.Microphone, backend.Hints)}");
-                Console.WriteLine($"Разрешение на системный звук: {Describe(permissions.SystemAudio, backend.Hints)}");
-
-                return 0;
+                Console.WriteLine($"{(device.IsDefault ? "*" : " ")} {device.Name}  ({device.Uid})");
             }
-            catch (CaptureException e)
-            {
-                Console.Error.WriteLine($"Ошибка: {e.Message}");
-                return 1;
-            }
+
+            var permissions = await backend.CheckPermissionsAsync(interrupts.Current);
+            Console.WriteLine();
+            Console.WriteLine($"Разрешение на микрофон: {Describe(permissions.Microphone, backend.Hints)}");
+            Console.WriteLine($"Разрешение на системный звук: {Describe(permissions.SystemAudio, backend.Hints)}");
         });
         return command;
     }
 
-    private static async Task<string?> ExecuteAsync(RecordSettings settings, Interrupts interrupts)
+    private static async Task<string> ExecuteAsync(RecordSettings settings, Interrupts interrupts)
     {
         var directory = settings.Output ?? SessionDirectory.Default(DateTime.Now, Environment.CurrentDirectory);
         try
@@ -83,7 +72,7 @@ internal static class RecordCommand
             ReportPermissions(await backend.CheckPermissionsAsync(stop), backend.Hints, settings.NoMic);
             var mic = settings.NoMic ? null : await ResolveMicrophoneAsync(backend, settings.Mic, stop);
 
-            Directory.CreateDirectory(directory);
+            CreateDirectory(directory);
             var status = new RecordingStatus(backend.Hints.SystemSilence);
             backend.Levels += status.OnLevels;
 
@@ -106,19 +95,10 @@ internal static class RecordCommand
             status.WriteLine($"Записано {Formatting.Duration(status.Elapsed)}: {directory}");
             return directory;
         }
-        catch (OperationCanceledException)
+        catch
         {
-            Console.Error.WriteLine();
-            Console.Error.WriteLine("Запись отменена до начала.");
             DeleteIfEmpty(directory);
-            return null;
-        }
-        catch (Exception e) when (e is CaptureException or IOException or UnauthorizedAccessException)
-        {
-            Console.Error.WriteLine();
-            Console.Error.WriteLine($"Ошибка: {e.Message}");
-            DeleteIfEmpty(directory);
-            return null;
+            throw;
         }
     }
 
@@ -173,6 +153,18 @@ internal static class RecordCommand
         var helper = MacCaptureBackend.Locate(AppContext.BaseDirectory)
             ?? throw new CaptureException($"Не найден {MacCaptureBackend.HelperFileName} рядом с meetrec ({AppContext.BaseDirectory}).");
         return new MacCaptureBackend(helper);
+    }
+
+    private static void CreateDirectory(string directory)
+    {
+        try
+        {
+            Directory.CreateDirectory(directory);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            throw new MeetrecException($"Не удалось создать папку {directory}: {e.Message}", e);
+        }
     }
 
     private static void DeleteIfEmpty(string directory)
