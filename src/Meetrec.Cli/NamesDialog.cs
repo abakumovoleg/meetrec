@@ -1,3 +1,4 @@
+using Meetrec.Core.Output;
 using Meetrec.Core.Transcript;
 
 namespace Meetrec.Cli;
@@ -65,13 +66,13 @@ internal static class NamesDialog
             + $"{profile.TalkShare * 100:0} % речи, {Formatting.Count(profile.UtteranceCount, "реплика", "реплики", "реплик")}");
         foreach (var sample in profile.Samples)
         {
-            err.WriteLine($"  [{Formatting.Clock(sample.Start)}] {Shorten(sample.Text)}");
+            err.WriteLine($"  [{TimeFormat.Clock(sample.Start)}] {Shorten(sample.Text)}");
         }
 
         if (hint is not null)
         {
             err.WriteLine($"  Подсказка: {hint.Name} — так обратились перед репликой этого спикера "
-                + $"({Formatting.Count(hint.Mentions, "раз", "раза", "раз")}), [{Formatting.Clock(hint.At)}] «{hint.Quote}»");
+                + $"({Formatting.Count(hint.Mentions, "раз", "раза", "раз")}), [{TimeFormat.Clock(hint.At)}] «{hint.Quote}»");
         }
 
         var suggested = currentName != profile.Label ? currentName : hint?.Name;
@@ -90,7 +91,7 @@ internal static class NamesDialog
                     return profile.Label;
                 case "p" or "з" when player is not null:
                     var utterance = profile.LongestUtterances[played++ % profile.LongestUtterances.Count];
-                    err.WriteLine($"  ▶ [{Formatting.Clock(utterance.Start)}] {Shorten(utterance.Text)}");
+                    err.WriteLine($"  ▶ [{TimeFormat.Clock(utterance.Start)}] {Shorten(utterance.Text)}");
                     using (var escape = EscapeKey.Watch(ct))
                     {
                         if (player.Play(utterance.Start, utterance.End, escape.Token) is { } error)

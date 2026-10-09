@@ -16,10 +16,7 @@ public sealed class MarkdownFormatter : ITranscriptFormatter
             }
 
             var u = utterances[i];
-            writer.Write($"[{FormatClock(u.Start)}] {u.Speaker}: {u.Text}\n");
+            writer.Write($"[{TimeFormat.Clock(u.Start)}] {u.Speaker}: {u.Text}\n");
         }
     }
-
-    private static string FormatClock(TimeSpan time) =>
-        $"{(int)time.TotalHours:00}:{time.Minutes:00}:{time.Seconds:00}";
 }

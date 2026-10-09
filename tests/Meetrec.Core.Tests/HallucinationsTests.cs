@@ -47,6 +47,19 @@ public class HallucinationsTests
     }
 
     [Fact]
+    public void Remove_AccentedLatinAndNonRussianCyrillic_AreKept()
+    {
+        // Arrange
+        Word[] words = [W("café", 0), W("naïve,", 1), W("Straße", 2), W("Київ", 3), W("її", 4), W("є.", 5), W("그래요", 6)];
+
+        // Act
+        var result = Hallucinations.Remove(words);
+
+        // Assert
+        Assert.Equal(["café", "naïve,", "Straße", "Київ", "її", "є."], result.Select(w => w.Text));
+    }
+
+    [Fact]
     public void Remove_PhraseLoopedFourTimes_KeepsFirstOccurrence()
     {
         // Arrange

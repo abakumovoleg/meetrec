@@ -13,10 +13,10 @@
 
 ## R0. Мелочи — коммит: —
 
-- [ ] `.gitignore`: `out*/` в корне.
-- [ ] `Hallucinations.IsReadableScript`: латиница целиком (`é`, `ü`, `ß`), а не только `a–z`; кириллица целиком (`і`, `ї`, `є`). Тест: «café», «naïve», «Київ» не выбрасываются, «그래요» выбрасывается.
-- [ ] Дубли: `MarkdownFormatter.FormatClock` → общий формат времени в Core; `ModelHttp` берёт версию из `AppVersion.Current`.
-- [ ] `WindowsCaptureBackend.Stream` → `CaptureStream`.
+- [x] `.gitignore`: `out*/` в корне.
+- [x] `Hallucinations.IsReadableScript`: латиница целиком (`é`, `ü`, `ß`), а не только `a–z`; кириллица целиком (`і`, `ї`, `є`). Тест: «café», «naïve», «Київ» не выбрасываются, «그래요» выбрасывается.
+- [x] Дубли: `MarkdownFormatter.FormatClock` → общий формат времени в Core; `ModelHttp` берёт версию из `AppVersion.Current`.
+- [x] `WindowsCaptureBackend.Stream` → `CaptureStream`.
 
 Готово, когда: `dotnet build`, `dotnet test` зелёные.
 

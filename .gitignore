@@ -486,3 +486,6 @@ meetings/
 
 # Local Meetzone research: probe logs contain tokens and colleagues' voices
 meetzone/
+
+# Ad-hoc transcription outputs in the repo root
+/out*/

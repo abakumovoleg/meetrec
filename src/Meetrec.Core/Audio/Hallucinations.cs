@@ -66,8 +66,10 @@ public static class Hallucinations
         }
     }
 
+    // Latin: Basic, Latin-1 Supplement, Extended-A/B, Extended Additional. Cyrillic: main block and Supplement.
     private static bool IsReadableScript(string text) =>
-        text.Where(char.IsLetter).All(c => c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= 'а' and <= 'я') or (>= 'А' and <= 'Я') or 'ё' or 'Ё');
+        text.Where(char.IsLetter).All(c => c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z')
+            or (>= '\u00C0' and <= '\u024F') or (>= '\u1E00' and <= '\u1EFF') or (>= '\u0400' and <= '\u052F'));
 
     private static string Normalize(string text) =>
         new string([.. text.Where(char.IsLetter)]).ToLower(CultureInfo.InvariantCulture);

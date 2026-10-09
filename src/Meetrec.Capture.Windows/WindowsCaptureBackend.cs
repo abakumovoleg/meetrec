@@ -26,7 +26,7 @@ public sealed class WindowsCaptureBackend : ICaptureBackend
     private readonly TaskCompletionSource _exited = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Stopwatch _clock = new();
     private readonly Lock _gate = new();
-    private readonly List<Stream> _streams = [];
+    private readonly List<CaptureStream> _streams = [];
     private long _origin;
     private CaptureTrack? _systemTrack;
     private CaptureTrack? _micTrack;
@@ -234,14 +234,14 @@ public sealed class WindowsCaptureBackend : ICaptureBackend
     {
         var recorder = builder.Build();
         var track = new CaptureTrack(path, recorder.WaveFormat);
-        var stream = new Stream(recorder, device, recorder.WaveFormat.AverageBytesPerSecond);
+        var stream = new CaptureStream(recorder, device, recorder.WaveFormat.AverageBytesPerSecond);
         recorder.DataAvailable += (data, flags, _, timestamp) => OnData(stream, track, data, flags, timestamp);
         recorder.RecordingStopped += (_, e) => OnStopped(stream, e.Exception);
         _streams.Add(stream);
         return track;
     }
 
-    private void OnData(Stream stream, CaptureTrack track, ReadOnlySpan<byte> data, AudioClientBufferFlags flags, long timestamp)
+    private void OnData(CaptureStream stream, CaptureTrack track, ReadOnlySpan<byte> data, AudioClientBufferFlags flags, long timestamp)
     {
         try
         {
@@ -259,7 +259,7 @@ public sealed class WindowsCaptureBackend : ICaptureBackend
         }
     }
 
-    private void OnStopped(Stream stream, Exception? error)
+    private void OnStopped(CaptureStream stream, Exception? error)
     {
         if (error is not null)
         {
@@ -334,7 +334,7 @@ public sealed class WindowsCaptureBackend : ICaptureBackend
         }
     }
 
-    private sealed record Stream(WasapiRecorder Recorder, MMDevice Device, int BytesPerSecond)
+    private sealed record CaptureStream(WasapiRecorder Recorder, MMDevice Device, int BytesPerSecond)
     {
         private readonly TaskCompletionSource _stopped = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
