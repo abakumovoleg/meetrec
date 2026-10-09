@@ -58,6 +58,9 @@ internal static class TranscribeCommand
 
         var diarization = DiarizationSettings.Choose(settings.Speakers, input.HasMicTrack, settings.Threshold);
         var store = new ModelStore(ModelDirectory.Resolve());
+        Console.Error.WriteLine(Diagnostics.Input(input));
+        Console.Error.WriteLine(Diagnostics.Settings(settings, diarization));
+        Console.Error.WriteLine($"Модели: {store.Root}");
         await EnsureModelsAsync(store, TranscriptionModels.Required(settings.Model, OperatingSystem.IsMacOS(), diarization), ct);
 
         var mic = input.MicPath is null ? null : AudioLoader.LoadMono16k(input.MicPath);
@@ -71,6 +74,7 @@ internal static class TranscribeCommand
         // Both tracks share one Whisper instance, and it is released before diarization to keep peak memory down.
         using (var whisper = WhisperTranscriber.Load(store.PathOf(ModelCatalog.WhisperModel(settings.Model))))
         {
+            Console.Error.WriteLine($"Whisper: {settings.Model}, рантайм {WhisperTranscriber.LoadedRuntime ?? "?"}");
             var recognizer = new SpeechRecognizer(whisper, new SileroVad(store.PathOf(ModelCatalog.SileroVad)));
             if (mic is not null)
             {
@@ -78,7 +82,6 @@ internal static class TranscribeCommand
             }
 
             systemWords = await RecognizeAsync(recognizer, system, Path.GetFileName(input.SystemPath), settings.Language, ct);
-            Console.Error.WriteLine($"Whisper: {settings.Model}, рантайм {WhisperTranscriber.LoadedRuntime ?? "?"}");
         }
 
         ct.ThrowIfCancellationRequested();
@@ -129,8 +132,9 @@ internal static class TranscribeCommand
         SpeechRecognizer recognizer, AudioClip clip, string name, string language, CancellationToken ct)
     {
         var progress = new ConsoleStageProgress($"Распознавание {name}");
-        var words = await recognizer.RecognizeAsync(clip, language, progress, ct);
+        var recognition = await recognizer.RecognizeAsync(clip, language, progress, ct);
         progress.Complete();
-        return words;
+        Console.Error.WriteLine(Diagnostics.Recognition(recognition.Stats, language));
+        return recognition.Words;
     }
 }

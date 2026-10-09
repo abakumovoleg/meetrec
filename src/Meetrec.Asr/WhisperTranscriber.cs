@@ -16,7 +16,7 @@ public sealed class WhisperTranscriber : IDisposable
 
     public static WhisperTranscriber Load(string modelPath) => new(WhisperFactory.FromPath(modelPath));
 
-    public async Task<IReadOnlyList<Word>> TranscribeAsync(
+    public async Task<WhisperResult> TranscribeAsync(
         float[] samples, int sampleRate, string language, IProgress<int>? progress, CancellationToken ct)
     {
         // Whisper's DTW timestamps would place word starts better, but whisper.cpp drops all text after
@@ -36,8 +36,10 @@ public sealed class WhisperTranscriber : IDisposable
 
         var duration = TimeSpan.FromSeconds((double)samples.Length / sampleRate);
         var words = new List<Word>();
+        string? detected = null;
         await foreach (var segment in processor.ProcessAsync(samples, ct))
         {
+            detected ??= segment.Language;
             var text = segment.Text.Trim();
             if (text.Length == 0 || segment.Start >= duration)
             {
@@ -47,8 +49,10 @@ public sealed class WhisperTranscriber : IDisposable
             words.Add(new Word(text, segment.Start, segment.End > duration ? duration : segment.End));
         }
 
-        return words;
+        return new WhisperResult(words, detected);
     }
 
     public void Dispose() => _factory.Dispose();
 }
+
+public sealed record WhisperResult(IReadOnlyList<Word> Words, string? Language);
