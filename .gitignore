@@ -483,3 +483,6 @@ $RECYCLE.BIN/
 
 # Default folder for meetrec recordings
 meetings/
+
+# Local Meetzone research: probe logs contain tokens and colleagues' voices
+meetzone/
