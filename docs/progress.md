@@ -31,7 +31,7 @@
 | 7в | Основной проход Whisper стартует за 1 с до первой речи по VAD (`SpeechMask.Lead`); для `ru` — начальная подсказка «Да, хорошо. Так, давайте дальше.» Запись с 1:16 тишины в начале: вместо 9 минут строчных без пунктуации — нормальный текст | `560ee17` |
 | 7г | `Hallucinations.Remove`: «Продолжение следует» и слова не кириллицей/латиницей выбрасываются до `SpeechRepair` — на молчащем микрофоне Bluetooth-наушников галлюцинаций не осталось, «그래요.» стал «Да.»; счётчик в диагностике | `8ba1be2` |
 | 7д | Зацикливание Whisper: фраза из 2–15 слов, повторённая подряд ≥ 4 раз, остаётся один раз (`Hallucinations.Remove`), регион распознаётся заново — петля «Парк, ну, ты гони меня, я...» ×20 заменилась настоящей речью | `da52e6c` |
-| R0 | Рефакторинг, мелочи: `/out*/` в `.gitignore`; фильтр письменности в `Hallucinations` — латиница и кириллица целиком; `TimeFormat.Clock` в Core вместо двух копий; `ModelHttp` берёт версию из `AppVersion`; `WindowsCaptureBackend.Stream` → `CaptureStream` | — |
+| R0 | Рефакторинг, мелочи: `/out*/` в `.gitignore`; фильтр письменности в `Hallucinations` — латиница и кириллица целиком; `TimeFormat.Clock` в Core вместо двух копий; `ModelHttp` берёт версию из `AppVersion`; `WindowsCaptureBackend.Stream` → `CaptureStream` | `6ed8d78` |
 
 174 юнит-теста в `tests/Meetrec.Core.Tests` (`dotnet test`) и 15 в `native/meetrec-capture` (`swift test`), все зелёные.
 
