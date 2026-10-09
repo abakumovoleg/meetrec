@@ -6,8 +6,9 @@ public sealed class MarkdownFormatter : ITranscriptFormatter
 {
     public string Format => "md";
 
-    public void Write(IReadOnlyList<Utterance> utterances, TextWriter writer)
+    public void Write(Conversation conversation, TextWriter writer)
     {
+        var utterances = conversation.Utterances;
         for (var i = 0; i < utterances.Count; i++)
         {
             if (i > 0)
@@ -16,7 +17,7 @@ public sealed class MarkdownFormatter : ITranscriptFormatter
             }
 
             var u = utterances[i];
-            writer.Write($"[{TimeFormat.Clock(u.Start)}] {u.Speaker}: {u.Text}\n");
+            writer.Write($"[{TimeFormat.Clock(u.Start)}] {conversation.NameOf(u.Speaker)}: {u.Text}\n");
         }
     }
 }

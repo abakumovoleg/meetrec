@@ -10,10 +10,10 @@ public sealed class SrtFormatter : ITranscriptFormatter
 
     public string Format => "srt";
 
-    public void Write(IReadOnlyList<Utterance> utterances, TextWriter writer)
+    public void Write(Conversation conversation, TextWriter writer)
     {
         var index = 0;
-        foreach (var cue in utterances.SelectMany(SplitIntoCues))
+        foreach (var cue in conversation.Utterances.SelectMany(SplitIntoCues))
         {
             if (index > 0)
             {
@@ -21,7 +21,7 @@ public sealed class SrtFormatter : ITranscriptFormatter
             }
 
             index++;
-            writer.Write($"{index}\n{FormatTimestamp(cue.Start)} --> {FormatTimestamp(cue.End)}\n{cue.Speaker}: {cue.Text}\n");
+            writer.Write($"{index}\n{FormatTimestamp(cue.Start)} --> {FormatTimestamp(cue.End)}\n{conversation.NameOf(cue.Speaker)}: {cue.Text}\n");
         }
     }
 

@@ -6,5 +6,5 @@ public interface ITranscriptFormatter
 {
     string Format { get; }
 
-    void Write(IReadOnlyList<Utterance> utterances, TextWriter writer);
+    void Write(Conversation conversation, TextWriter writer);
 }

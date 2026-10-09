@@ -11,56 +11,57 @@ public sealed class TranscriptionPipeline(TranscriptionEngines engines)
     public async Task<TranscriptionResult> RunAsync(
         TranscribeInput input, TranscriptionOptions options, ITranscriptionObserver observer, CancellationToken ct)
     {
-        if (input.HasMicTrack && input.Session is null)
+        if (input.Session is null && input.Tracks.Count > 1)
         {
-            observer.Warning($"нет {SessionFile.FileName}, дорожки склеиваются без сдвига.");
+            observer.Warning($"нет {SessionLayout.SessionFileName}, дорожки склеиваются без сдвига.");
         }
 
-        var mic = input.MicPath is null ? null : AudioLoader.LoadMono16k(input.MicPath);
-        var system = AudioLoader.LoadMono16k(input.SystemPath);
-        observer.AudioLoaded(system.Duration, mic is null ? 1 : 2);
+        var clips = input.Tracks.Select(t => AudioLoader.LoadMono16k(t.Path)).ToList();
+        observer.AudioLoaded(clips.Select((c, i) => input.Tracks[i].Offset + c.Duration).Max(), clips.Count);
 
         var tracks = new List<TrackRecognition>();
         var stages = new List<StageTiming>();
-        IReadOnlyList<Word> micWords = [];
-        IReadOnlyList<Word> systemWords;
+        var words = new List<IReadOnlyList<Word>>();
         using (var transcriber = engines.LoadTranscriber())
         {
             observer.TranscriberLoaded();
             var recognizer = new SpeechRecognizer(transcriber, engines.Vad, options.Recognition);
-            if (mic is not null)
+            for (var i = 0; i < clips.Count; i++)
             {
-                micWords = await RecognizeAsync(recognizer, mic, TranscribeInput.MicFileName, options.Language, observer, tracks, stages, ct);
+                var name = Path.GetFileName(input.Tracks[i].Path);
+                var recognition = await RunStage(new PipelineStage(StageKind.Recognition, name), observer, stages, progress =>
+                    recognizer.RecognizeAsync(clips[i], options.Language, progress, ct));
+                tracks.Add(new TrackRecognition(name, recognition.Stats));
+                observer.TrackRecognized(name, recognition.Stats);
+                words.Add(recognition.Words);
             }
-
-            systemWords = await RecognizeAsync(
-                recognizer, system, Path.GetFileName(input.SystemPath), options.Language, observer, tracks, stages, ct);
         }
 
-        ct.ThrowIfCancellationRequested();
-        var diarization = options.Diarization;
-        var segments = RunStage(new PipelineStage(StageKind.Diarization), observer, stages, progress =>
-            engines.Diarizer.Diarize(system, diarization.NumClusters, diarization.Threshold, progress));
+        var merged = new List<TrackWords>();
+        var diarizedAudio = new Dictionary<string, AudioClip>();
+        for (var i = 0; i < clips.Count; i++)
+        {
+            var track = input.Tracks[i];
+            IReadOnlyList<DiarSegment> segments = [];
+            if (track.Speakers is DiarizedSpeakers)
+            {
+                ct.ThrowIfCancellationRequested();
+                segments = Diarize(clips[i], track, input.Tracks.Count(t => t.Speakers is DiarizedSpeakers) > 1, options, observer, stages);
+                diarizedAudio[track.Id] = clips[i];
+            }
 
-        var utterances = TranscriptMerger.Merge(micWords, systemWords, segments, input.OffsetMs);
-        return new TranscriptionResult(utterances, tracks, stages, system);
+            merged.Add(new TrackWords(track.Id, track.Offset, track.Speakers, words[i], segments));
+        }
+
+        return new TranscriptionResult(TranscriptMerger.Merge(merged), tracks, stages, diarizedAudio);
     }
 
-    private static async Task<IReadOnlyList<Word>> RecognizeAsync(
-        SpeechRecognizer recognizer,
-        AudioClip clip,
-        string track,
-        string language,
-        ITranscriptionObserver observer,
-        List<TrackRecognition> tracks,
-        List<StageTiming> stages,
-        CancellationToken ct)
+    private IReadOnlyList<DiarSegment> Diarize(
+        AudioClip clip, SourceTrack track, bool named, TranscriptionOptions options, ITranscriptionObserver observer, List<StageTiming> stages)
     {
-        var recognition = await RunStage(new PipelineStage(StageKind.Recognition, track), observer, stages, progress =>
-            recognizer.RecognizeAsync(clip, language, progress, ct));
-        tracks.Add(new TrackRecognition(track, recognition.Stats));
-        observer.TrackRecognized(track, recognition.Stats);
-        return recognition.Words;
+        var settings = options.Diarization;
+        var stage = new PipelineStage(StageKind.Diarization, named ? Path.GetFileName(track.Path) : null);
+        return RunStage(stage, observer, stages, progress => engines.Diarizer.Diarize(clip, settings.NumClusters, settings.Threshold, progress));
     }
 
     private static async Task<T> RunStage<T>(

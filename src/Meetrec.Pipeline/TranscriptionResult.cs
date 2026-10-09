@@ -4,11 +4,12 @@ using Meetrec.Core.Transcript;
 
 namespace Meetrec.Pipeline;
 
+// Audio of diarized tracks is kept for the names dialog, which plays speakers' phrases from it.
 public sealed record TranscriptionResult(
-    IReadOnlyList<Utterance> Utterances,
+    Conversation Conversation,
     IReadOnlyList<TrackRecognition> Tracks,
     IReadOnlyList<StageTiming> Stages,
-    AudioClip SystemAudio);
+    IReadOnlyDictionary<string, AudioClip> DiarizedAudio);
 
 public sealed record TrackRecognition(string Track, RecognitionStats Stats);
 

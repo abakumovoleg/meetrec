@@ -11,10 +11,10 @@ public class SrtFormatterTests
     {
         // Arrange
         var first = Utterance(Word(" Привет", 3661.042, 3661.5), Word(" всем", 3661.6, 3662.25));
-        var second = Utterance(Word(" Здравствуйте", 3663, 3664, Speakers.Numbered(1), Track.System));
+        var second = Utterance(Word(" Здравствуйте", 3663, 3664, S1));
 
         // Act
-        var result = Render(new SrtFormatter(), first, second);
+        var result = Render(new SrtFormatter(), Conversation([first, second]));
 
         // Assert
         Assert.Equal(
@@ -31,7 +31,7 @@ public class SrtFormatterTests
             Word("раз", 0, 1), Word("два", 2, 3), Word("три", 5, 6.5), Word("четыре", 7, 8), Word("пять", 9, 10));
 
         // Act
-        var result = Render(new SrtFormatter(), utterance);
+        var result = Render(new SrtFormatter(), Conversation([utterance]));
 
         // Assert
         Assert.Equal(
@@ -50,7 +50,7 @@ public class SrtFormatterTests
         var utterance = Utterance(words);
 
         // Act
-        var result = Render(new SrtFormatter(), utterance);
+        var result = Render(new SrtFormatter(), Conversation([utterance]));
 
         // Assert
         var texts = result.Split('\n').Where(l => l.StartsWith("Я: ")).Select(l => l["Я: ".Length..]).ToList();
@@ -66,7 +66,7 @@ public class SrtFormatterTests
         var utterance = Utterance(Word(new string('а', 100), 0, 9));
 
         // Act
-        var result = Render(new SrtFormatter(), utterance);
+        var result = Render(new SrtFormatter(), Conversation([utterance]));
 
         // Assert
         Assert.StartsWith("1\n00:00:00,000 --> 00:00:09,000\n", result);

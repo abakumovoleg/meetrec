@@ -72,10 +72,10 @@ public sealed class WindowsCaptureBackend : ICaptureBackend
             _systemTrack = Add(
                 Recorder(output).WithLoopbackCapture().WithPollingSync(),
                 output,
-                Path.Combine(sessionDir, TranscribeInput.SystemFileName));
+                Path.Combine(sessionDir, SessionLayout.SystemFile));
             if (microphone is not null)
             {
-                _micTrack = Add(Recorder(microphone), microphone, Path.Combine(sessionDir, TranscribeInput.MicFileName));
+                _micTrack = Add(Recorder(microphone), microphone, Path.Combine(sessionDir, SessionLayout.MicFile));
             }
 
             _clock.Restart();

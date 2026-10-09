@@ -5,25 +5,23 @@ namespace Meetrec.Tests;
 
 public class SpeakerProfilesTests
 {
-    private static readonly string S1 = Speakers.Numbered(1);
-    private static readonly string S2 = Speakers.Numbered(2);
-
     [Fact]
     public void Build_Speakers_CountsShareAndUtterances()
     {
         // Arrange
         Utterance[] utterances =
         [
-            Utterance(Word("а", 0, 3, Speakers.Me)),
-            Utterance(Word("б", 3, 4, S1, Track.System)),
-            Utterance(Word("в", 4, 10, S2, Track.System)),
+            Utterance(Word("а", 0, 3)),
+            Utterance(Word("б", 3, 4, S1)),
+            Utterance(Word("в", 4, 10, S2)),
         ];
 
         // Act
-        var profiles = SpeakerProfiles.Build(utterances);
+        var profiles = SpeakerProfiles.Build(Conversation(utterances));
 
         // Assert
-        Assert.Equal([S1, S2], profiles.Select(p => p.Label));
+        Assert.Equal([S1, S2], profiles.Select(p => p.Id));
+        Assert.Equal([Speakers.Numbered(1), Speakers.Numbered(2)], profiles.Select(p => p.Label));
         Assert.Equal(0.1, profiles[0].TalkShare, 3);
         Assert.Equal(0.6, profiles[1].TalkShare, 3);
         Assert.Equal(1, profiles[1].UtteranceCount);
@@ -44,7 +42,7 @@ public class SpeakerProfilesTests
         ];
 
         // Act
-        var profile = Assert.Single(SpeakerProfiles.Build(utterances));
+        var profile = Assert.Single(SpeakerProfiles.Build(Conversation(utterances)));
 
         // Assert
         Assert.Equal(["раз два три", "раз два", "раз два три четыре"], profile.Samples.Select(s => s.Text));
@@ -59,7 +57,7 @@ public class SpeakerProfilesTests
         Utterance[] utterances = [Said(S1, 0, "раз"), Said(S1, 5, "два")];
 
         // Act
-        var profile = Assert.Single(SpeakerProfiles.Build(utterances));
+        var profile = Assert.Single(SpeakerProfiles.Build(Conversation(utterances)));
 
         // Assert
         Assert.Equal(["раз", "два"], profile.Samples.Select(s => s.Text));

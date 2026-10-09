@@ -7,27 +7,27 @@ internal static class NamesDialog
 {
     private const int SampleLength = 110;
 
-    // Returns the renamed transcript, or null if nothing changed or the dialog was interrupted.
-    public static IReadOnlyList<Utterance>? Run(IReadOnlyList<Utterance> utterances, ClipPlayer? player, CancellationToken ct)
+    // Returns the renamed conversation, or null if nothing changed or the dialog was interrupted.
+    public static Conversation? Run(Conversation conversation, ClipPlayer? player, CancellationToken ct)
     {
-        var current = SpeakerNames.Current(utterances);
+        var current = SpeakerNames.Nameable(conversation);
         if (current.Count == 0)
         {
             return null;
         }
 
-        var byLabel = SpeakerNames.Reset(utterances);
-        var hints = NameHints.Find(byLabel);
-        var names = current.ToDictionary(s => s.Label, s => s.Name);
+        var byDefault = SpeakerNames.Reset(conversation);
+        var hints = NameHints.Find(byDefault);
+        var names = current.ToDictionary(s => s.Id, s => s.Name);
 
         var err = Console.Error;
         err.WriteLine();
         err.WriteLine($"Кто есть кто — {Formatting.Count(current.Count, "спикер", "спикера", "спикеров")}. "
             + $"Enter — принять предложенное, «-» — оставить номер{(player is null ? "" : ", p — послушать (Esc — остановить)")}, q — закончить.");
 
-        foreach (var profile in SpeakerProfiles.Build(byLabel))
+        foreach (var profile in SpeakerProfiles.Build(byDefault))
         {
-            var name = Ask(profile, names[profile.Label], hints.GetValueOrDefault(profile.Label), player, ct);
+            var name = Ask(profile, names[profile.Id], hints.GetValueOrDefault(profile.Id), player, ct);
             if (ct.IsCancellationRequested)
             {
                 err.WriteLine("Имена не сохранены.");
@@ -39,22 +39,22 @@ internal static class NamesDialog
                 break;
             }
 
-            names[profile.Label] = name;
+            names[profile.Id] = name;
         }
 
-        if (current.All(s => names[s.Label] == s.Name))
+        if (current.All(s => names[s.Id] == s.Name))
         {
             err.WriteLine("Имена не изменились.");
             return null;
         }
 
         err.WriteLine();
-        foreach (var group in current.GroupBy(s => names[s.Label]).Where(g => g.Count() > 1 || g.Key != g.First().Label))
+        foreach (var group in current.GroupBy(s => names[s.Id]).Where(g => g.Count() > 1 || g.Key != Speakers.DefaultName(g.First().Id)))
         {
-            err.WriteLine($"{string.Join(" + ", group.Select(s => s.Label))} → {group.Key}");
+            err.WriteLine($"{string.Join(" + ", group.Select(s => Speakers.DefaultName(s.Id)))} → {group.Key}");
         }
 
-        return SpeakerNames.Apply(utterances, names);
+        return SpeakerNames.Apply(conversation, names);
     }
 
     private static string? Ask(SpeakerProfile profile, string currentName, NameHint? hint, ClipPlayer? player, CancellationToken ct)
@@ -93,7 +93,7 @@ internal static class NamesDialog
                     err.WriteLine($"  ▶ [{TimeFormat.Clock(utterance.Start)}] {Shorten(utterance.Text)}");
                     using (var escape = EscapeKey.Watch(ct))
                     {
-                        if (player.Play(utterance.Start, utterance.End, escape.Token) is { } error)
+                        if (player.Play(utterance.Track, utterance.Start, utterance.End, escape.Token) is { } error)
                         {
                             err.WriteLine($"  Не удалось проиграть: {error}");
                         }

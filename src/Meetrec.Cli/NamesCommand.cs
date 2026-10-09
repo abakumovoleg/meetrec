@@ -25,7 +25,7 @@ internal static class NamesCommand
     private static int Execute(string path, CancellationToken ct)
     {
         var input = TranscribeInput.Resolve(path);
-        var json = TranscriptWriter.PathOf(input.OutputDirectory, input.OutputName, JsonFormat);
+        var json = SessionLayout.TranscriptPath(input.OutputDirectory, input.OutputName, JsonFormat);
         if (!File.Exists(json))
         {
             throw new MeetrecException($"Нет {Path.GetFileName(json)} — сначала meetrec transcribe {path}");
@@ -36,21 +36,32 @@ internal static class NamesCommand
             throw new MeetrecException("Имена спрашиваются только в интерактивном терминале.");
         }
 
-        var utterances = TranscriptReader.Read(json);
-        if (SpeakerNames.Current(utterances).Count == 0)
+        var stored = TranscriptReader.Read(json);
+        Conversation? named = null;
+        if (SpeakerNames.Nameable(stored.Conversation).Count == 0)
         {
-            Console.Error.WriteLine("В расшифровке нет спикеров системной дорожки.");
+            Console.Error.WriteLine("В расшифровке нет спикеров, различённых диаризацией.");
+        }
+        else
+        {
+            named = NamesDialog.Run(stored.Conversation, ClipPlayer.ForFiles(input.Tracks), ct);
+        }
+
+        if (ct.IsCancellationRequested)
+        {
+            return 130;
+        }
+
+        if (named is null && !stored.IsOutdated)
+        {
             return 0;
         }
 
-        if (NamesDialog.Run(utterances, ClipPlayer.ForFile(input.SystemPath), ct) is not { } named)
-        {
-            return ct.IsCancellationRequested ? 130 : 0;
-        }
-
-        var formats = TranscriptWriter.SupportedFormats
-            .Where(f => File.Exists(TranscriptWriter.PathOf(input.OutputDirectory, input.OutputName, f)));
-        foreach (var written in TranscriptWriter.WriteAll(input.OutputDirectory, named, formats, input.OutputName))
+        // A transcript in an older schema is rewritten in the current one even when no name changed.
+        IEnumerable<string> formats = named is null
+            ? [JsonFormat]
+            : TranscriptWriter.SupportedFormats.Where(f => File.Exists(SessionLayout.TranscriptPath(input.OutputDirectory, input.OutputName, f)));
+        foreach (var written in TranscriptWriter.WriteAll(input.OutputDirectory, named ?? stored.Conversation, formats, input.OutputName))
         {
             Console.WriteLine(written);
         }

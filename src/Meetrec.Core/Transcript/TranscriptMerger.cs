@@ -1,52 +1,84 @@
 namespace Meetrec.Core.Transcript;
 
+public sealed record TrackWords(string Track, TimeSpan Offset, SpeakerSource Source, IReadOnlyList<Word> Words, IReadOnlyList<DiarSegment> Segments);
+
 public static class TranscriptMerger
 {
     public static readonly TimeSpan NearestSegmentTolerance = TimeSpan.FromSeconds(1);
 
     public static readonly TimeSpan UtterancePauseThreshold = TimeSpan.FromSeconds(1.5);
 
-    public static IReadOnlyList<Utterance> Merge(
-        IReadOnlyList<Word> mic,
-        IReadOnlyList<Word> sys,
-        IReadOnlyList<DiarSegment> segs,
-        int offsetMs)
+    // Words of all tracks on session time (track time + offset). Diarized speakers are numbered by first appearance
+    // across all diarized tracks, so that display names stay unique.
+    public static Conversation Merge(IReadOnlyList<TrackWords> tracks)
     {
-        var offset = TimeSpan.FromMilliseconds(offsetMs);
+        var ordered = tracks
+            .SelectMany(t => t.Words.Select(w => (Track: t, Word: w)))
+            .OrderBy(x => x.Word.Start + x.Track.Offset)
+            .ToList();
 
-        var micWords = mic.Select(w => (Word: w with { Start = w.Start + offset, End = w.End + offset }, Track: Track.Mic, Speaker: (int?)null));
-        var sysWords = sys.Select(w => (Word: w, Track: Track.System, Speaker: FindSpeaker(w, segs)));
-
-        var ordered = micWords.Concat(sysWords).OrderBy(x => x.Word.Start).ToList();
-
-        var labels = new Dictionary<int, string>();
+        var speakers = new List<TranscriptSpeaker>();
+        var known = new HashSet<SpeakerId>();
+        var numbered = new Dictionary<(string Track, int Cluster), SpeakerId>();
         var words = new List<TranscriptWord>(ordered.Count);
-        foreach (var (word, track, speaker) in ordered)
+        foreach (var (track, word) in ordered)
         {
-            var label = track == Track.Mic ? Speakers.Me : Label(speaker, labels);
-            words.Add(new TranscriptWord(word.Text, word.Start, word.End, label, track));
+            var speaker = track.Source is FixedSpeaker fixedSpeaker
+                ? new TranscriptSpeaker(fixedSpeaker.Id, fixedSpeaker.Name, track.Track, Diarized: false)
+                : Diarized(track, FindCluster(word, track.Segments), numbered);
+            if (known.Add(speaker.Id))
+            {
+                speakers.Add(speaker);
+            }
+
+            words.Add(new TranscriptWord(word.Text, word.Start + track.Offset, word.End + track.Offset, speaker.Id, track.Track));
         }
 
-        return Group(words);
+        return new Conversation(speakers, Group(words, speakers));
     }
 
-    private static string Label(int? speaker, Dictionary<int, string> labels)
+    public static IReadOnlyList<Utterance> Group(IReadOnlyList<TranscriptWord> words, IReadOnlyList<TranscriptSpeaker> speakers)
     {
-        if (speaker is not { } id)
+        var names = speakers.ToDictionary(s => s.Id, s => s.Name);
+        var utterances = new List<Utterance>();
+        var current = new List<TranscriptWord>();
+
+        foreach (var word in words)
         {
-            return Speakers.Unknown;
+            if (current.Count > 0 && StartsNewUtterance(current[^1], word, names))
+            {
+                utterances.Add(ToUtterance(current));
+                current = [];
+            }
+
+            current.Add(word);
         }
 
-        if (!labels.TryGetValue(id, out var label))
+        if (current.Count > 0)
         {
-            label = Speakers.Numbered(labels.Count + 1);
-            labels[id] = label;
+            utterances.Add(ToUtterance(current));
         }
 
-        return label;
+        return utterances;
     }
 
-    private static int? FindSpeaker(Word word, IReadOnlyList<DiarSegment> segs)
+    private static TranscriptSpeaker Diarized(TrackWords track, int? cluster, Dictionary<(string, int), SpeakerId> numbered)
+    {
+        if (cluster is not { } c)
+        {
+            return new TranscriptSpeaker(SpeakerId.Unknown, Speakers.Unknown, track.Track, Diarized: true);
+        }
+
+        if (!numbered.TryGetValue((track.Track, c), out var id))
+        {
+            id = SpeakerId.Diarized(track.Track, numbered.Count + 1);
+            numbered[(track.Track, c)] = id;
+        }
+
+        return new TranscriptSpeaker(id, Speakers.DefaultName(id), track.Track, Diarized: true);
+    }
+
+    private static int? FindCluster(Word word, IReadOnlyList<DiarSegment> segs)
     {
         DiarSegment? best = null;
         var bestOverlap = TimeSpan.Zero;
@@ -79,32 +111,8 @@ public static class TranscriptMerger
         return nearest is not null && nearestDistance <= NearestSegmentTolerance ? nearest.Speaker : null;
     }
 
-    public static IReadOnlyList<Utterance> Group(IReadOnlyList<TranscriptWord> words)
-    {
-        var utterances = new List<Utterance>();
-        var current = new List<TranscriptWord>();
-
-        foreach (var word in words)
-        {
-            if (current.Count > 0 && StartsNewUtterance(current[^1], word))
-            {
-                utterances.Add(ToUtterance(current));
-                current = [];
-            }
-
-            current.Add(word);
-        }
-
-        if (current.Count > 0)
-        {
-            utterances.Add(ToUtterance(current));
-        }
-
-        return utterances;
-    }
-
-    private static bool StartsNewUtterance(TranscriptWord previous, TranscriptWord next) =>
-        previous.Speaker != next.Speaker
+    private static bool StartsNewUtterance(TranscriptWord previous, TranscriptWord next, Dictionary<SpeakerId, string> names) =>
+        names[previous.Speaker] != names[next.Speaker]
         || previous.Track != next.Track
         || next.Start - previous.End > UtterancePauseThreshold;
 

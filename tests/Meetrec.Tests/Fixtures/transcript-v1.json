@@ -1,0 +1,149 @@
+{
+  "utterances": [
+    {
+      "speaker": "Я",
+      "track": "mic",
+      "start": 1.5,
+      "end": 2.5,
+      "text": "Привет, коллеги.",
+      "words": [
+        {
+          "text": "Привет,",
+          "start": 1.5,
+          "end": 1.9,
+          "speaker": "Я",
+          "track": "mic"
+        },
+        {
+          "text": "коллеги.",
+          "start": 2,
+          "end": 2.5,
+          "speaker": "Я",
+          "track": "mic"
+        }
+      ]
+    },
+    {
+      "speaker": "Олег",
+      "track": "system",
+      "start": 3,
+      "end": 4,
+      "text": "Добрый день.",
+      "words": [
+        {
+          "text": "Добрый",
+          "start": 3,
+          "end": 3.4,
+          "speaker": "Олег",
+          "track": "system",
+          "label": "Спикер 1"
+        },
+        {
+          "text": "день.",
+          "start": 3.5,
+          "end": 4,
+          "speaker": "Олег",
+          "track": "system",
+          "label": "Спикер 1"
+        }
+      ]
+    },
+    {
+      "speaker": "Рома",
+      "track": "system",
+      "start": 6,
+      "end": 7,
+      "text": "Да, слушаю.",
+      "words": [
+        {
+          "text": "Да,",
+          "start": 6,
+          "end": 6.3,
+          "speaker": "Рома",
+          "track": "system",
+          "label": "Спикер 2"
+        },
+        {
+          "text": "слушаю.",
+          "start": 6.4,
+          "end": 7,
+          "speaker": "Рома",
+          "track": "system",
+          "label": "Спикер 2"
+        }
+      ]
+    },
+    {
+      "speaker": "Я",
+      "track": "mic",
+      "start": 9.5,
+      "end": 10.5,
+      "text": "Ром, расскажи?",
+      "words": [
+        {
+          "text": "Ром,",
+          "start": 9.5,
+          "end": 9.8,
+          "speaker": "Я",
+          "track": "mic"
+        },
+        {
+          "text": "расскажи?",
+          "start": 9.9,
+          "end": 10.5,
+          "speaker": "Я",
+          "track": "mic"
+        }
+      ]
+    },
+    {
+      "speaker": "Олег",
+      "track": "system",
+      "start": 11,
+      "end": 14,
+      "text": "Хорошо. Значит, так.",
+      "words": [
+        {
+          "text": "Хорошо.",
+          "start": 11,
+          "end": 11.5,
+          "speaker": "Олег",
+          "track": "system",
+          "label": "Спикер 1"
+        },
+        {
+          "text": "Значит,",
+          "start": 13,
+          "end": 13.4,
+          "speaker": "Олег",
+          "track": "system",
+          "label": "Спикер 3"
+        },
+        {
+          "text": "так.",
+          "start": 13.5,
+          "end": 14,
+          "speaker": "Олег",
+          "track": "system",
+          "label": "Спикер 3"
+        }
+      ]
+    },
+    {
+      "speaker": "Спикер ?",
+      "track": "system",
+      "start": 20,
+      "end": 20.3,
+      "text": "Угу.",
+      "words": [
+        {
+          "text": "Угу.",
+          "start": 20,
+          "end": 20.3,
+          "speaker": "Спикер ?",
+          "track": "system"
+        }
+      ]
+    }
+  ]
+}

@@ -1,22 +1,23 @@
 using Meetrec.Asr;
+using Meetrec.Core;
 using Meetrec.Pipeline;
 
 namespace Meetrec.Cli;
 
-internal sealed class ConsoleTranscriptionObserver(TranscribeSettings settings) : ITranscriptionObserver
+internal sealed class ConsoleTranscriptionObserver(TranscribeSettings settings, TranscribeInput input) : ITranscriptionObserver
 {
     private ConsoleStageProgress? _stage;
 
     public void Warning(string message) => Console.Error.WriteLine($"Внимание: {message}");
 
     public void AudioLoaded(TimeSpan duration, int tracks) =>
-        Console.Error.WriteLine($"Запись: {Formatting.Duration(duration)}, {(tracks == 1 ? "одна дорожка" : "микрофон и системный звук")}");
+        Console.Error.WriteLine($"Запись: {Formatting.Duration(duration)}, {Diagnostics.Tracks(input)}");
 
     public void TranscriberLoaded() =>
         Console.Error.WriteLine($"Whisper: {settings.Model}, рантайм {WhisperTranscriber.LoadedRuntime ?? "?"}");
 
     public void StageStarted(PipelineStage stage) =>
-        _stage = new ConsoleStageProgress(stage.Kind == StageKind.Diarization ? "Диаризация" : $"Распознавание {stage.Track}");
+        _stage = new ConsoleStageProgress($"{(stage.Kind == StageKind.Diarization ? "Диаризация" : "Распознавание")}{(stage.Track is null ? "" : $" {stage.Track}")}");
 
     public void StageProgress(PipelineStage stage, int percent) => _stage?.Report(percent);
 

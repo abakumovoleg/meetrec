@@ -10,8 +10,8 @@ namespace Meetrec.Cli;
 
 internal sealed record TranscribeSettings(int? Speakers, string Language, string Model, IReadOnlyList<string> Formats, float? Threshold, bool AskNames)
 {
-    public TranscriptionOptions ToOptions(bool hasMicTrack) =>
-        new(Language, Model, RecognitionOptions.Default, DiarizationSettings.Choose(Speakers, hasMicTrack, Threshold));
+    public TranscriptionOptions ToOptions(int fixedSpeakers) =>
+        new(Language, Model, RecognitionOptions.Default, DiarizationSettings.Choose(Speakers, fixedSpeakers, Threshold));
 }
 
 internal sealed class TranscribeOptions

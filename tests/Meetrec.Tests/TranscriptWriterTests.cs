@@ -13,10 +13,10 @@ public sealed class TranscriptWriterTests : IDisposable
     public void WriteAll_RequestedFormats_WritesTranscriptFilesWithoutBom()
     {
         // Arrange
-        var utterances = new[] { Utterance(Word("тест", 0, 1)) };
+        var conversation = Conversation([Utterance(Word("тест", 0, 1))]);
 
         // Act
-        var paths = TranscriptWriter.WriteAll(_dir, utterances, ["md", "SRT", "md"]);
+        var paths = TranscriptWriter.WriteAll(_dir, conversation, ["md", "SRT", "md"], "transcript");
 
         // Assert
         Assert.Equal(
@@ -32,10 +32,10 @@ public sealed class TranscriptWriterTests : IDisposable
     public void WriteAll_UnknownFormat_Throws()
     {
         // Arrange
-        var utterances = new[] { Utterance(Word("тест", 0, 1)) };
+        var conversation = Conversation([Utterance(Word("тест", 0, 1))]);
 
         // Act
-        var act = () => TranscriptWriter.WriteAll(_dir, utterances, ["txt"]);
+        var act = () => TranscriptWriter.WriteAll(_dir, conversation, ["txt"], "transcript");
 
         // Assert
         Assert.Throws<ArgumentException>(act);
@@ -45,10 +45,10 @@ public sealed class TranscriptWriterTests : IDisposable
     public void WriteAll_CustomFileName_UsesItForEveryFormat()
     {
         // Arrange
-        var utterances = new[] { Utterance(Word("тест", 0, 1)) };
+        var conversation = Conversation([Utterance(Word("тест", 0, 1))]);
 
         // Act
-        var paths = TranscriptWriter.WriteAll(_dir, utterances, ["md", "json"], "call.transcript");
+        var paths = TranscriptWriter.WriteAll(_dir, conversation, ["md", "json"], "call.transcript");
 
         // Assert
         Assert.Equal(
@@ -63,7 +63,7 @@ public sealed class TranscriptWriterTests : IDisposable
         var directory = Path.Combine(Path.GetTempPath(), "meetrec-tests-missing-" + Guid.NewGuid());
 
         // Act
-        var act = () => TranscriptWriter.WriteAll(directory, [], ["md"]);
+        var act = () => TranscriptWriter.WriteAll(directory, Conversation([]), ["md"], "transcript");
 
         // Assert
         var error = Assert.Throws<MeetrecException>(act);

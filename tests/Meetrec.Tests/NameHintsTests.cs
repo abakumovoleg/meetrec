@@ -5,10 +5,6 @@ namespace Meetrec.Tests;
 
 public class NameHintsTests
 {
-    private static readonly string S1 = Speakers.Numbered(1);
-    private static readonly string S2 = Speakers.Numbered(2);
-    private static readonly string S3 = Speakers.Numbered(3);
-
     [Fact]
     public void Find_NameAddressedBeforeReply_SuggestsItForReplyingSpeaker()
     {
@@ -16,7 +12,7 @@ public class NameHintsTests
         Utterance[] utterances = [Said(S1, 0, "Так, ладно. Ром, поведи тогда"), Said(S2, 4, "Да, давай")];
 
         // Act
-        var hints = NameHints.Find(utterances);
+        var hints = NameHints.Find(Conversation(utterances));
 
         // Assert
         var hint = Assert.Single(hints);
@@ -38,7 +34,7 @@ public class NameHintsTests
         Utterance[] utterances = [Said(S1, 0, text), Said(S2, 2, "да")];
 
         // Act
-        var hints = NameHints.Find(utterances);
+        var hints = NameHints.Find(Conversation(utterances));
 
         // Assert
         Assert.Empty(hints);
@@ -52,8 +48,8 @@ public class NameHintsTests
         Utterance[] longPause = [Said(S1, 0, "Да, Олег, извини"), Said(S2, 10, "ну что")];
 
         // Act
-        var afterSame = NameHints.Find(sameSpeaker);
-        var afterPause = NameHints.Find(longPause);
+        var afterSame = NameHints.Find(Conversation(sameSpeaker));
+        var afterPause = NameHints.Find(Conversation(longPause));
 
         // Assert
         Assert.Empty(afterSame);
@@ -68,7 +64,7 @@ public class NameHintsTests
         Utterance[] utterances = [Said(S1, 0, text), Said(S2, 17, "да")];
 
         // Act
-        var hints = NameHints.Find(utterances);
+        var hints = NameHints.Find(Conversation(utterances));
 
         // Assert
         Assert.Empty(hints);
@@ -81,13 +77,13 @@ public class NameHintsTests
         Utterance[] utterances =
         [
             Said(S1, 0, "Так, Олег, что скажешь?"),
-            Said(Speakers.Me, 2, "да", Track.Mic),
+            Said(SpeakerId.Me, 2, "да"),
             Said(S1, 4, "Так, Саша, что скажешь?"),
-            Said(Speakers.Unknown, 6, "да"),
+            Said(SpeakerId.Unknown, 6, "да"),
         ];
 
         // Act
-        var hints = NameHints.Find(utterances);
+        var hints = NameHints.Find(Conversation(utterances));
 
         // Assert
         Assert.Empty(hints);
@@ -106,7 +102,7 @@ public class NameHintsTests
         ];
 
         // Act
-        var hints = NameHints.Find(utterances);
+        var hints = NameHints.Find(Conversation(utterances));
 
         // Assert
         var hint = Assert.Single(hints).Value;
@@ -129,7 +125,7 @@ public class NameHintsTests
         ];
 
         // Act
-        var hints = NameHints.Find(utterances);
+        var hints = NameHints.Find(Conversation(utterances));
 
         // Assert
         var hint = Assert.Single(hints);

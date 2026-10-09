@@ -35,8 +35,9 @@
 | R1 | Единая обработка ошибок: `MeetrecException` в Core (наследник — `CaptureException`), перевод ошибок ввода, файлов и моделей с контекстом; один обработчик в `Program` (1 / 130 / 70), команды без `catch … when`; модель Whisper загружается в `Load`, битый файл — понятная ошибка | `1dfbb03` |
 | R2 | Распознавание: эвристики (`SpeechMask`, `SpeechRepair`, `SpeechLevel`, `Hallucinations`) перенесены из Core в `Meetrec.Asr`; `RecognitionOptions` со всеми порогами и подсказкой по языку; `ITranscriber`/`IVad` и тесты `SpeechRecognizer` на фейках; окно Whisper без копии дорожки; тестовый проект → `Meetrec.Tests`. Эталон совпал побайтно | `bdc1089` |
 | R3 | Конвейер расшифровки в библиотеке `Meetrec.Pipeline` (`TranscriptionPipeline`, наблюдатель, движки с фейками в тестах); `TranscribeCommand` — 59 строк; диалог имён берёт уже загруженную дорожку; `AudioLoader` без двойного пика памяти; стенд замеров `tools/eval` (`meetrec-eval`: run/compare/recognize/timing), данные в `tools/eval/data/` вне git. Эталон совпал побайтно | `c7b5330` |
+| R4 | Модель дорожек и спикеров: сессия — список дорожек (`SourceTrack`: фиксированный спикер или диаризация), `SpeakerId` отдельно от имени, таблица спикеров у расшифровки (`Conversation`), склейка N дорожек; `session.json` и `transcript.json` v2 с чтением v1, `names` пересохраняет v1; `SessionLayout`; README — форматы. Эталон: md/srt побайтно, json по содержанию; сессия из трёх участников склеивается без диаризации | — |
 
-190 юнит-тестов в `tests/Meetrec.Tests` (`dotnet test`) и 15 в `native/meetrec-capture` (`swift test`), все зелёные.
+206 юнит-тестов в `tests/Meetrec.Tests` (`dotnet test`) и 15 в `native/meetrec-capture` (`swift test`), все зелёные.
 
 Все команды спеки работают на macOS и на Windows. На Windows проверены `devices`, `record` (с микрофоном и `--no-mic`), остановка, публикация `win-x64`, диалог имён с проигрыванием фраз и расшифровка: запись 58 мин одной дорожкой — распознавание 1 мин 28 с (`large-v3-turbo`, Vulkan), диаризация 6 мин 41 с, 277 реплик, 17 спикеров (из них 11 — по 1–2 реплики, см. открытые вопросы).
 

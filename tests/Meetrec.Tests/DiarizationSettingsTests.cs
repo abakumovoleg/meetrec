@@ -5,13 +5,13 @@ namespace Meetrec.Tests;
 public class DiarizationSettingsTests
 {
     [Fact]
-    public void Choose_SpeakersGivenWithMicTrack_ExcludesMeFromClusters()
+    public void Choose_SpeakersGivenWithFixedSpeaker_ExcludesThemFromClusters()
     {
         // Arrange
         int? speakers = 4;
 
         // Act
-        var settings = DiarizationSettings.Choose(speakers, hasMicTrack: true, threshold: null);
+        var settings = DiarizationSettings.Choose(speakers, fixedSpeakers: 1, threshold: null);
 
         // Assert
         Assert.Equal(3, settings.NumClusters);
@@ -25,20 +25,20 @@ public class DiarizationSettingsTests
         int? speakers = 4;
 
         // Act
-        var settings = DiarizationSettings.Choose(speakers, hasMicTrack: false, threshold: null);
+        var settings = DiarizationSettings.Choose(speakers, fixedSpeakers: 0, threshold: null);
 
         // Assert
         Assert.Equal(4, settings.NumClusters);
     }
 
     [Fact]
-    public void Choose_OnlyMeWithMicTrack_KeepsAtLeastOneCluster()
+    public void Choose_OnlyFixedSpeakers_KeepsAtLeastOneCluster()
     {
         // Arrange
         int? speakers = 1;
 
         // Act
-        var settings = DiarizationSettings.Choose(speakers, hasMicTrack: true, threshold: null);
+        var settings = DiarizationSettings.Choose(speakers, fixedSpeakers: 1, threshold: null);
 
         // Assert
         Assert.Equal(1, settings.NumClusters);
@@ -51,7 +51,7 @@ public class DiarizationSettingsTests
         int? speakers = null;
 
         // Act
-        var settings = DiarizationSettings.Choose(speakers, hasMicTrack: true, threshold: null);
+        var settings = DiarizationSettings.Choose(speakers, fixedSpeakers: 1, threshold: null);
 
         // Assert
         Assert.Null(settings.NumClusters);
@@ -66,7 +66,7 @@ public class DiarizationSettingsTests
         float? threshold = 0.75f;
 
         // Act
-        var settings = DiarizationSettings.Choose(null, hasMicTrack: false, threshold);
+        var settings = DiarizationSettings.Choose(null, fixedSpeakers: 0, threshold);
 
         // Assert
         Assert.Equal(0.75f, settings.Threshold);

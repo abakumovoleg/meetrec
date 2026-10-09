@@ -3,6 +3,7 @@ using Meetrec.Capture.Mac;
 using Meetrec.Capture.Windows;
 using Meetrec.Core;
 using Meetrec.Core.Capture;
+using Meetrec.Core.Transcript;
 
 namespace Meetrec.Cli;
 
@@ -62,7 +63,7 @@ internal static class RecordCommand
         var directory = settings.Output ?? SessionDirectory.Default(DateTime.Now, Environment.CurrentDirectory);
         try
         {
-            if (Directory.Exists(directory) && SessionDirectory.ContainsRecording(directory))
+            if (Directory.Exists(directory) && SessionLayout.ContainsRecording(directory))
             {
                 throw new CaptureException($"В папке уже есть запись: {directory}");
             }
@@ -85,9 +86,7 @@ internal static class RecordCommand
 
             var started = await start;
             status.MarkStarted();
-            SessionFile.Write(
-                Path.Combine(directory, SessionFile.FileName),
-                new Session(startedAt, mic?.Name, started.SystemDevice, started.OffsetMs, AppVersion.Current));
+            SessionFile.Write(Path.Combine(directory, SessionLayout.SessionFileName), NewSession(startedAt, mic, started));
             status.WriteLine($"Запись в {directory}{(mic is null ? "" : $", микрофон «{mic.Name}»")}. Ctrl+C — остановить.");
 
             await Task.WhenAny(backend.Exited, Task.Delay(Timeout.Infinite, stop));
@@ -100,6 +99,15 @@ internal static class RecordCommand
             DeleteIfEmpty(directory);
             throw;
         }
+    }
+
+    // Mic first: on equal timestamps its words come first, as they always have.
+    private static Session NewSession(DateTimeOffset startedAt, MicrophoneDevice? mic, CaptureStarted started)
+    {
+        SessionTrack[] micTrack = mic is null
+            ? []
+            : [new SessionTrack(SessionLayout.MicFile, TrackSource.Mic, started.OffsetMs, mic.Name, new SessionSpeaker(SpeakerId.Me.Value, Speakers.Me))];
+        return new Session(startedAt, AppVersion.Current, [.. micTrack, new SessionTrack(SessionLayout.SystemFile, TrackSource.System, 0, started.SystemDevice)]);
     }
 
     private static void ReportPermissions(CapturePermissions permissions, CaptureHints hints, bool noMic)

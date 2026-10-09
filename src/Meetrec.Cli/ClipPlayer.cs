@@ -6,28 +6,38 @@ using NAudio.Wave;
 
 namespace Meetrec.Cli;
 
-internal sealed class ClipPlayer(Func<AudioClip> load)
+internal sealed class ClipPlayer(Func<string, AudioClip?> load)
 {
     public static readonly TimeSpan MaxClip = TimeSpan.FromSeconds(8);
 
     private static readonly TimeSpan Padding = TimeSpan.FromSeconds(0.3);
 
-    private AudioClip? _audio;
+    private readonly Dictionary<string, AudioClip?> _audio = [];
 
     public static bool IsSupported => OperatingSystem.IsMacOS() || OperatingSystem.IsWindows();
 
-    public static ClipPlayer? ForFile(string? path) =>
-        IsSupported && File.Exists(path) ? new ClipPlayer(() => AudioLoader.LoadMono16k(path)) : null;
+    public static ClipPlayer? ForFiles(IReadOnlyList<SourceTrack> tracks) =>
+        IsSupported ? new ClipPlayer(id => tracks.FirstOrDefault(t => t.Id == id) is { } t ? AudioLoader.LoadMono16k(t.Path) : null) : null;
 
-    public static ClipPlayer? ForClip(AudioClip clip) => IsSupported ? new ClipPlayer(() => clip) : null;
+    public static ClipPlayer? ForClips(IReadOnlyDictionary<string, AudioClip> clips) =>
+        IsSupported ? new ClipPlayer(clips.GetValueOrDefault) : null;
 
     // Returns the error message, or null when the clip has been played.
-    public string? Play(TimeSpan start, TimeSpan end, CancellationToken ct)
+    public string? Play(string track, TimeSpan start, TimeSpan end, CancellationToken ct)
     {
         try
         {
-            _audio ??= load();
-            var clip = _audio.Slice(start - Padding, (end - start > MaxClip ? start + MaxClip : end) + Padding);
+            if (!_audio.TryGetValue(track, out var audio))
+            {
+                _audio[track] = audio = load(track);
+            }
+
+            if (audio is null)
+            {
+                return $"нет звука дорожки {track}";
+            }
+
+            var clip = audio.Slice(start - Padding, (end - start > MaxClip ? start + MaxClip : end) + Padding);
 
             if (OperatingSystem.IsWindows())
             {

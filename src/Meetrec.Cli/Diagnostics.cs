@@ -12,26 +12,56 @@ internal static class Diagnostics
     {
         if (input.Session is not { } session)
         {
-            return input.OutputName == TranscribeInput.SessionOutputName ? $"Вход: {input.OutputDirectory}" : $"Вход: {input.SystemPath}";
+            return input.OutputName == SessionLayout.TranscriptName ? $"Вход: {input.OutputDirectory}" : $"Вход: {input.Tracks[0].Path}";
         }
 
-        var mic = input.HasMicTrack ? $"микрофон «{session.MicDevice ?? "?"}»" : "без микрофона";
-        return $"Вход: {input.OutputDirectory} — {mic}, системный звук «{session.SystemDevice ?? "?"}», сдвиг {session.OffsetMs} мс, записано meetrec {session.Version}";
+        var mic = session.Tracks.FirstOrDefault(t => t.Source == TrackSource.Mic);
+        var system = session.Tracks.FirstOrDefault(t => t.Source == TrackSource.System);
+        var parts = new List<string>();
+        if (mic is not null || system is not null)
+        {
+            parts.Add(mic is null ? "без микрофона" : $"микрофон «{mic.Device ?? "?"}»");
+            if (system is not null)
+            {
+                parts.Add($"системный звук «{system.Device ?? "?"}»");
+            }
+
+            parts.Add($"сдвиг {mic?.OffsetMs ?? 0} мс");
+        }
+
+        parts.AddRange(session.Tracks.Where(t => t.Source == TrackSource.Participant).Select(t => $"{Name(t)} со сдвигом {t.OffsetMs} мс"));
+        return $"Вход: {input.OutputDirectory} — {string.Join(", ", parts)}, записано meetrec {session.Version}";
     }
 
-    public static string Settings(TranscribeSettings settings, DiarizationSettings diarization)
+    // "одна дорожка" for a lone file; otherwise what the tracks are: "микрофон и системный звук".
+    public static string Tracks(TranscribeInput input)
+    {
+        if (input.Tracks.Count == 1)
+        {
+            return "одна дорожка";
+        }
+
+        var sources = input.Session?.Tracks.Select(Describe).ToList() ?? [.. input.Tracks.Select(t => t.Speakers is FixedSpeaker ? "микрофон" : "системный звук")];
+        return string.Join(", ", sources[..^1]) + " и " + sources[^1];
+    }
+
+    public static string Settings(TranscribeSettings settings, TranscribeInput input, DiarizationSettings diarization)
     {
         var threshold = diarization.Threshold.ToString("0.0#", CultureInfo.CurrentCulture);
-        var speakers = diarization.NumClusters is { } clusters
-            ? $"спикеров {settings.Speakers} (кластеров диаризации {clusters}, {diarization.Embedding.Id})"
+        var speakers = !input.Tracks.Any(t => t.Speakers is DiarizedSpeakers) ? "без диаризации: у каждой дорожки свой спикер"
+            : diarization.NumClusters is { } clusters ? $"спикеров {settings.Speakers} (кластеров диаризации {clusters}, {diarization.Embedding.Id})"
             : $"спикеры автоматически ({diarization.Embedding.Id}, порог {threshold})";
         return $"Параметры: язык {settings.Language}, модель {settings.Model}, {speakers}, форматы {string.Join(", ", settings.Formats)}";
     }
 
-    public static string Summary(IReadOnlyList<Utterance> utterances, TimeSpan elapsed)
+    public static string Summary(Conversation conversation, TimeSpan elapsed)
     {
-        var speakers = utterances.Select(u => u.Speaker).Where(s => s != Speakers.Unknown).Distinct().Count();
-        return $"Готово за {Formatting.Duration(elapsed)}: {utterances.Count} реплик, спикеров {speakers}";
+        var speakers = conversation.Utterances
+            .Where(u => u.Speaker != SpeakerId.Unknown)
+            .Select(u => conversation.NameOf(u.Speaker))
+            .Distinct()
+            .Count();
+        return $"Готово за {Formatting.Duration(elapsed)}: {conversation.Utterances.Count} реплик, спикеров {speakers}";
     }
 
     public static string Recognition(RecognitionStats stats, string language)
@@ -56,4 +86,13 @@ internal static class Diagnostics
 
         return "  " + string.Join("; ", parts);
     }
+
+    private static string Describe(SessionTrack track) => track.Source switch
+    {
+        TrackSource.Mic => "микрофон",
+        TrackSource.System => "системный звук",
+        _ => Name(track),
+    };
+
+    private static string Name(SessionTrack track) => $"«{track.Speaker?.Name ?? track.File}»";
 }

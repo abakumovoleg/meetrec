@@ -22,7 +22,7 @@ internal static class RunCommand
         foreach (var evalCase in cases)
         {
             var input = TranscribeInput.Resolve(Path.Combine(Path.GetDirectoryName(casesPath)!, evalCase.Input));
-            var diarization = DiarizationSettings.Choose(evalCase.Speakers, input.HasMicTrack, evalCase.Threshold);
+            var diarization = DiarizationSettings.Choose(evalCase.Speakers, input.FixedSpeakers, evalCase.Threshold);
             var options = new TranscriptionOptions(evalCase.Language, evalCase.Model, recognition, diarization);
             var store = await Models.EnsureAsync(TranscriptionModels.Required(evalCase.Model, OperatingSystem.IsMacOS(), diarization));
 
@@ -31,9 +31,9 @@ internal static class RunCommand
                 .RunAsync(input, options, new EvalObserver(), CancellationToken.None);
 
             var directory = Directory.CreateDirectory(Path.Combine(output, evalCase.Name)).FullName;
-            TranscriptWriter.WriteAll(directory, result.Utterances, TranscriptWriter.SupportedFormats, input.OutputName);
+            TranscriptWriter.WriteAll(directory, result.Conversation, TranscriptWriter.SupportedFormats, input.OutputName);
             File.WriteAllLines(Path.Combine(directory, "stats.txt"), Stats(result));
-            Console.WriteLine($"   {result.Utterances.Count} реплик → {directory}");
+            Console.WriteLine($"   {result.Conversation.Utterances.Count} реплик → {directory}");
         }
 
         return 0;
@@ -43,7 +43,7 @@ internal static class RunCommand
     [
         .. result.Tracks.Select(t => $"{t.Track}: {t.Stats}"),
         .. result.Stages.Select(s => $"{s.Stage.Kind} {s.Stage.Track}: {s.Elapsed.TotalSeconds:0.0} s"),
-        $"utterances: {result.Utterances.Count}",
+        $"utterances: {result.Conversation.Utterances.Count}",
     ];
 
     private sealed record EvalCase(string Name, string Input, int? Speakers, float? Threshold, string Language = "ru", string Model = ModelCatalog.DefaultWhisper);

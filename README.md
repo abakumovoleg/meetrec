@@ -126,6 +126,42 @@ meetings/2026-10-08_15-00-34/
 afconvert -f WAVE -d LEI16@16000 -c 1 audio.mp4 audio.wav
 ```
 
+## Форматы `session.json` и `transcript.json`
+
+`session.json` перечисляет дорожки сессии. У каждой — сдвиг её начала от начала сессии (`offsetMs`: время дорожки + сдвиг = время сессии) и, если на дорожке один известный человек, его спикер. Дорожки без спикера разделяются на голоса диаризацией.
+
+```json
+{
+  "schemaVersion": 2,
+  "startedAtUtc": "2026-10-08T12:00:34+00:00",
+  "version": "0.1.0",
+  "tracks": [
+    { "file": "mic.wav", "source": "mic", "offsetMs": 12, "device": "MacBook Pro Microphone", "speaker": { "id": "me", "name": "Я" } },
+    { "file": "system.wav", "source": "system", "offsetMs": 0, "device": "Системный звук" }
+  ]
+}
+```
+
+`transcript.json` — таблица спикеров и реплики со словами. Спикер определяется по `speakerId`, имя берётся из таблицы; `speaker` в реплике — только для удобства чтения. Идентификаторы: `me` — микрофон, `system:N` — N-й голос системного звука по порядку появления, `unknown` — голос, который диаризация не отнесла ни к кому. Имена можно менять только у спикеров с `"diarized": true`, кроме `unknown`.
+
+```json
+{
+  "schemaVersion": 2,
+  "speakers": [
+    { "id": "me", "name": "Я", "track": "mic", "diarized": false },
+    { "id": "system:1", "name": "Олег", "track": "system", "diarized": true }
+  ],
+  "utterances": [
+    {
+      "speakerId": "system:1", "speaker": "Олег", "track": "system", "start": 3.0, "end": 4.0, "text": "Добрый день.",
+      "words": [ { "text": "Добрый", "start": 3.0, "end": 3.4, "speakerId": "system:1", "track": "system" } ]
+    }
+  ]
+}
+```
+
+Файлы прежнего формата (без `schemaVersion`) читаются; `meetrec names` пересохраняет `transcript.json` в новом.
+
 ## Имена спикеров
 
 После расшифровки (или позже — `meetrec names <папка>`) для каждого собеседника показываются доля речи, число реплик и несколько его фраз:

@@ -1,5 +1,9 @@
+using Meetrec.Core.Output;
+
 namespace Meetrec.Eval;
 
+// md and srt must match byte for byte. json in an older schema is compared by content: both files are read and
+// written again in the current schema.
 internal static class CompareCommand
 {
     private static readonly string[] Extensions = [".md", ".json", ".srt"];
@@ -15,12 +19,22 @@ internal static class CompareCommand
         {
             var relative = Path.GetRelativePath(baseline, expected);
             var other = Path.Combine(actual, relative);
-            var same = File.Exists(other) && File.ReadAllBytes(expected).AsSpan().SequenceEqual(File.ReadAllBytes(other));
-            Console.WriteLine($"{(same ? "same" : "DIFF")}  {relative}");
-            differ += same ? 0 : 1;
+            var result = !File.Exists(other) ? "нет файла"
+                : File.ReadAllBytes(expected).AsSpan().SequenceEqual(File.ReadAllBytes(other)) ? "same"
+                : Path.GetExtension(expected) == ".json" && Normalized(expected) == Normalized(other) ? "same по содержанию"
+                : "DIFF";
+            Console.WriteLine($"{result}  {relative}");
+            differ += result.StartsWith("same", StringComparison.Ordinal) ? 0 : 1;
         }
 
         Console.WriteLine(differ == 0 ? "Совпало." : $"Расхождений: {differ}");
         return differ == 0 ? 0 : 1;
+    }
+
+    private static string Normalized(string path)
+    {
+        using var writer = new StringWriter();
+        new JsonFormatter().Write(TranscriptReader.Read(path).Conversation, writer);
+        return writer.ToString();
     }
 }

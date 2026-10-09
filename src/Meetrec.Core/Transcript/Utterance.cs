@@ -1,6 +1,7 @@
 namespace Meetrec.Core.Transcript;
 
-public sealed record Utterance(string Speaker, Track Track, IReadOnlyList<TranscriptWord> Words)
+// Words of speakers sharing a name are grouped together, so Speaker is the first word's and may differ from later ones.
+public sealed record Utterance(SpeakerId Speaker, string Track, IReadOnlyList<TranscriptWord> Words)
 {
     public TimeSpan Start => Words[0].Start;
 

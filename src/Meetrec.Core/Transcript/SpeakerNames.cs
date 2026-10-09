@@ -1,32 +1,19 @@
 namespace Meetrec.Core.Transcript;
 
-public sealed record SpeakerName(string Label, string Name);
-
 public static class SpeakerNames
 {
-    public static IReadOnlyList<SpeakerName> Current(IReadOnlyList<Utterance> utterances) =>
-        [.. utterances
-            .SelectMany(u => u.Words)
-            .Where(IsNameable)
-            .DistinctBy(w => w.SpeakerLabel)
-            .Select(w => new SpeakerName(w.SpeakerLabel, w.Speaker))];
+    public static IReadOnlyList<TranscriptSpeaker> Nameable(Conversation conversation) => [.. conversation.Speakers.Where(s => s.IsNameable)];
 
-    public static IReadOnlyList<Utterance> Apply(IReadOnlyList<Utterance> utterances, IReadOnlyDictionary<string, string> namesByLabel) =>
-        TranscriptMerger.Group([.. utterances.SelectMany(u => u.Words).Select(w => Rename(w, namesByLabel))]);
-
-    public static IReadOnlyList<Utterance> Reset(IReadOnlyList<Utterance> utterances) =>
-        Apply(utterances, Current(utterances).ToDictionary(s => s.Label, s => s.Label));
-
-    private static bool IsNameable(TranscriptWord word) => word.Track == Track.System && word.SpeakerLabel != Speakers.Unknown;
-
-    private static TranscriptWord Rename(TranscriptWord word, IReadOnlyDictionary<string, string> namesByLabel)
+    // Speakers given the same name end up in one utterance when they speak in a row.
+    public static Conversation Apply(Conversation conversation, IReadOnlyDictionary<SpeakerId, string> names)
     {
-        if (!IsNameable(word) || !namesByLabel.TryGetValue(word.SpeakerLabel, out var name))
-        {
-            return word;
-        }
-
-        var label = word.SpeakerLabel;
-        return word with { Speaker = name, Label = name == label ? null : label };
+        var speakers = conversation.Speakers
+            .Select(s => s.IsNameable && names.TryGetValue(s.Id, out var name) ? s with { Name = name } : s)
+            .ToList();
+        return new Conversation(speakers, TranscriptMerger.Group([.. conversation.Utterances.SelectMany(u => u.Words)], speakers));
     }
+
+    // Back to "Спикер N", so that speakers merged under one name are shown separately again.
+    public static Conversation Reset(Conversation conversation) =>
+        Apply(conversation, Nameable(conversation).ToDictionary(s => s.Id, s => Speakers.DefaultName(s.Id)));
 }

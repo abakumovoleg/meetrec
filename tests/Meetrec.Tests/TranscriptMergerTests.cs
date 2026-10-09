@@ -10,20 +10,28 @@ public class TranscriptMergerTests
     private static DiarSegment S(double start, double end, int speaker) =>
         new(TimeSpan.FromSeconds(start), TimeSpan.FromSeconds(end), speaker);
 
+    private static Conversation Merge(Word[] mic, Word[] sys, DiarSegment[] segs, int offsetMs) => TranscriptMerger.Merge(
+    [
+        new TrackWords("mic", TimeSpan.FromMilliseconds(offsetMs), FixedSpeaker.Me, mic, []),
+        new TrackWords("system", TimeSpan.Zero, DiarizedSpeakers.Instance, sys, segs),
+    ]);
+
+    private static IEnumerable<string> Names(Conversation conversation) => conversation.Utterances.Select(u => conversation.NameOf(u.Speaker));
+
     [Fact]
-    public void Merge_MicWords_AreLabeledMe()
+    public void Merge_MicWords_AreMe()
     {
         // Arrange
         Word[] mic = [W("привет", 0, 0.5), W("всем", 0.6, 1.0)];
 
         // Act
-        var result = TranscriptMerger.Merge(mic, [], [], 0);
+        var result = Merge(mic, [], [], 0);
 
         // Assert
-        var utterance = Assert.Single(result);
-        Assert.Equal(Speakers.Me, utterance.Speaker);
-        Assert.Equal(Track.Mic, utterance.Track);
-        Assert.All(utterance.Words, w => Assert.Equal(Speakers.Me, w.Speaker));
+        var utterance = Assert.Single(result.Utterances);
+        Assert.Equal(SpeakerId.Me, utterance.Speaker);
+        Assert.Equal("mic", utterance.Track);
+        Assert.All(utterance.Words, w => Assert.Equal(SpeakerId.Me, w.Speaker));
         Assert.Equal("привет всем", utterance.Text);
     }
 
@@ -35,10 +43,10 @@ public class TranscriptMergerTests
         DiarSegment[] segs = [S(0, 10, 7)];
 
         // Act
-        var result = TranscriptMerger.Merge(mic, [], segs, 0);
+        var result = Merge(mic, [], segs, 0);
 
         // Assert
-        Assert.Equal(Speakers.Me, Assert.Single(result).Speaker);
+        Assert.Equal(SpeakerId.Me, Assert.Single(result.Utterances).Speaker);
     }
 
     [Fact]
@@ -49,12 +57,12 @@ public class TranscriptMergerTests
         DiarSegment[] segs = [S(0, 1.2, 5), S(1.2, 3, 9)];
 
         // Act
-        var result = TranscriptMerger.Merge([], sys, segs, 0);
+        var result = Merge([], sys, segs, 0);
 
         // Assert
-        var word = Assert.Single(Assert.Single(result).Words);
-        Assert.Equal(Speakers.Numbered(1), word.Speaker);
-        Assert.Equal(Track.System, word.Track);
+        var word = Assert.Single(Assert.Single(result.Utterances).Words);
+        Assert.Equal(SpeakerId.Diarized("system", 1), word.Speaker);
+        Assert.Equal("system", word.Track);
     }
 
     [Fact]
@@ -65,10 +73,10 @@ public class TranscriptMergerTests
         DiarSegment[] segs = [S(0, 1.0, 4), S(1.0, 2.0, 2)];
 
         // Act
-        var result = TranscriptMerger.Merge([], sys, segs, 0);
+        var result = Merge([], sys, segs, 0);
 
         // Assert
-        Assert.Equal([Speakers.Numbered(1), Speakers.Numbered(2)], result.Select(u => u.Speaker));
+        Assert.Equal([Speakers.Numbered(1), Speakers.Numbered(2)], Names(result));
     }
 
     [Fact]
@@ -79,11 +87,11 @@ public class TranscriptMergerTests
         DiarSegment[] segs = [S(0, 3.0, 1), S(6.2, 8, 3)];
 
         // Act
-        var result = TranscriptMerger.Merge([], sys, segs, 0);
+        var result = Merge([], sys, segs, 0);
 
         // Assert
-        Assert.Equal(Speakers.Numbered(1), Assert.Single(result).Speaker);
-        Assert.Equal(Track.System, result[0].Track);
+        Assert.Equal(SpeakerId.Diarized("system", 1), Assert.Single(result.Utterances).Speaker);
+        Assert.Equal("system", result.Utterances[0].Track);
     }
 
     [Fact]
@@ -94,10 +102,10 @@ public class TranscriptMergerTests
         DiarSegment[] segs = [S(0, 3.0, 8)];
 
         // Act
-        var result = TranscriptMerger.Merge([], sys, segs, 0);
+        var result = Merge([], sys, segs, 0);
 
         // Assert
-        Assert.Equal(Speakers.Numbered(1), Assert.Single(result).Speaker);
+        Assert.Equal(SpeakerId.Diarized("system", 1), Assert.Single(result.Utterances).Speaker);
     }
 
     [Fact]
@@ -108,10 +116,10 @@ public class TranscriptMergerTests
         DiarSegment[] segs = [S(0, 3.9, 1), S(6.6, 8, 2)];
 
         // Act
-        var result = TranscriptMerger.Merge([], sys, segs, 0);
+        var result = Merge([], sys, segs, 0);
 
         // Assert
-        Assert.Equal(Speakers.Unknown, Assert.Single(result).Speaker);
+        Assert.Equal(SpeakerId.Unknown, Assert.Single(result.Utterances).Speaker);
     }
 
     [Fact]
@@ -121,11 +129,11 @@ public class TranscriptMergerTests
         Word[] sys = [W("а", 0, 0.2), W("б", 0.3, 0.5)];
 
         // Act
-        var result = TranscriptMerger.Merge([], sys, [], 0);
+        var result = Merge([], sys, [], 0);
 
         // Assert
-        var utterance = Assert.Single(result);
-        Assert.Equal(Speakers.Unknown, utterance.Speaker);
+        var utterance = Assert.Single(result.Utterances);
+        Assert.Equal(SpeakerId.Unknown, utterance.Speaker);
         Assert.Equal(2, utterance.Words.Count);
     }
 
@@ -136,10 +144,10 @@ public class TranscriptMergerTests
         Word[] mic = [W("я", 1.0, 1.5)];
 
         // Act
-        var result = TranscriptMerger.Merge(mic, [], [], 250);
+        var result = Merge(mic, [], [], 250);
 
         // Assert
-        var word = Assert.Single(Assert.Single(result).Words);
+        var word = Assert.Single(Assert.Single(result.Utterances).Words);
         Assert.Equal(TimeSpan.FromMilliseconds(1250), word.Start);
         Assert.Equal(TimeSpan.FromMilliseconds(1750), word.End);
     }
@@ -151,10 +159,10 @@ public class TranscriptMergerTests
         Word[] sys = [W("они", 1.0, 1.5)];
 
         // Act
-        var result = TranscriptMerger.Merge([], sys, [S(0, 2, 1)], 250);
+        var result = Merge([], sys, [S(0, 2, 1)], 250);
 
         // Assert
-        Assert.Equal(TimeSpan.FromSeconds(1), Assert.Single(result).Start);
+        Assert.Equal(TimeSpan.FromSeconds(1), Assert.Single(result.Utterances).Start);
     }
 
     [Fact]
@@ -166,10 +174,10 @@ public class TranscriptMergerTests
         DiarSegment[] segs = [S(1.4, 2, 1)];
 
         // Act
-        var result = TranscriptMerger.Merge(mic, sys, segs, 800);
+        var result = Merge(mic, sys, segs, 800);
 
         // Assert
-        Assert.Equal([Speakers.Numbered(1), Speakers.Me], result.Select(u => u.Speaker));
+        Assert.Equal([Speakers.Numbered(1), Speakers.Me], Names(result));
     }
 
     [Fact]
@@ -181,10 +189,10 @@ public class TranscriptMergerTests
         DiarSegment[] segs = [S(0, 10, 1)];
 
         // Act
-        var result = TranscriptMerger.Merge(mic, sys, segs, 0);
+        var result = Merge(mic, sys, segs, 0);
 
         // Assert
-        Assert.Equal(["м1", "с1", "м2", "с2"], result.Select(u => u.Text));
+        Assert.Equal(["м1", "с1", "м2", "с2"], result.Utterances.Select(u => u.Text));
     }
 
     [Fact]
@@ -194,10 +202,10 @@ public class TranscriptMergerTests
         Word[] sys = [W("второе", 1.0, 1.4), W("первое", 0.2, 0.8)];
 
         // Act
-        var result = TranscriptMerger.Merge([], sys, [S(0, 2, 1)], 0);
+        var result = Merge([], sys, [S(0, 2, 1)], 0);
 
         // Assert
-        Assert.Equal("первое второе", Assert.Single(result).Text);
+        Assert.Equal("первое второе", Assert.Single(result.Utterances).Text);
     }
 
     [Fact]
@@ -207,10 +215,10 @@ public class TranscriptMergerTests
         Word[] mic = [W("один", 0, 0.5), W("два", 1.9, 2.3), W("три", 3.8, 4.0)];
 
         // Act
-        var result = TranscriptMerger.Merge(mic, [], [], 0);
+        var result = Merge(mic, [], [], 0);
 
         // Assert
-        Assert.Equal("один два три", Assert.Single(result).Text);
+        Assert.Equal("один два три", Assert.Single(result.Utterances).Text);
     }
 
     [Fact]
@@ -220,10 +228,10 @@ public class TranscriptMergerTests
         Word[] mic = [W("один", 0, 0.5), W("два", 2.01, 2.3)];
 
         // Act
-        var result = TranscriptMerger.Merge(mic, [], [], 0);
+        var result = Merge(mic, [], [], 0);
 
         // Assert
-        Assert.Equal(["один", "два"], result.Select(u => u.Text));
+        Assert.Equal(["один", "два"], result.Utterances.Select(u => u.Text));
     }
 
     [Fact]
@@ -234,12 +242,12 @@ public class TranscriptMergerTests
         Word[] sys = [W("ответ", 0.6, 1.0)];
 
         // Act
-        var result = TranscriptMerger.Merge(mic, sys, [S(0.5, 2, 3)], 0);
+        var result = Merge(mic, sys, [S(0.5, 2, 3)], 0);
 
         // Assert
-        Assert.Equal([Speakers.Me, Speakers.Numbered(1)], result.Select(u => u.Speaker));
-        Assert.Equal(TimeSpan.FromSeconds(0.6), result[1].Start);
-        Assert.Equal(TimeSpan.FromSeconds(1.0), result[1].End);
+        Assert.Equal([Speakers.Me, Speakers.Numbered(1)], Names(result));
+        Assert.Equal(TimeSpan.FromSeconds(0.6), result.Utterances[1].Start);
+        Assert.Equal(TimeSpan.FromSeconds(1.0), result.Utterances[1].End);
     }
 
     [Fact]
@@ -250,12 +258,12 @@ public class TranscriptMergerTests
         DiarSegment[] segs = [S(0, 1, 7), S(1, 2, 0), S(2, 3, 7), S(3, 4, 3)];
 
         // Act
-        var result = TranscriptMerger.Merge([], sys, segs, 0);
+        var result = Merge([], sys, segs, 0);
 
         // Assert
         Assert.Equal(
             [Speakers.Numbered(1), Speakers.Numbered(2), Speakers.Numbered(1), Speakers.Numbered(3)],
-            result.Select(u => u.Speaker));
+            Names(result));
     }
 
     [Fact]
@@ -266,10 +274,10 @@ public class TranscriptMergerTests
         DiarSegment[] segs = [S(5, 6, 4)];
 
         // Act
-        var result = TranscriptMerger.Merge([], sys, segs, 0);
+        var result = Merge([], sys, segs, 0);
 
         // Assert
-        Assert.Equal([Speakers.Unknown, Speakers.Numbered(1)], result.Select(u => u.Speaker));
+        Assert.Equal([Speakers.Unknown, Speakers.Numbered(1)], Names(result));
     }
 
     [Fact]
@@ -279,10 +287,85 @@ public class TranscriptMergerTests
         Word[] none = [];
 
         // Act
-        var result = TranscriptMerger.Merge(none, none, [], 0);
+        var result = Merge(none, none, [], 0);
 
         // Assert
-        Assert.Empty(result);
+        Assert.Empty(result.Utterances);
+    }
+
+    [Fact]
+    public void Merge_SpeakerTable_ListsSpeakersByFirstAppearanceWithDefaultNames()
+    {
+        // Arrange
+        Word[] mic = [W("вопрос", 3, 3.5)];
+        Word[] sys = [W("потерян", 0, 0.3), W("ответ", 5.1, 5.4)];
+
+        // Act
+        var result = Merge(mic, sys, [S(5, 6, 4)], 0);
+
+        // Assert
+        Assert.Equal(
+            [
+                new TranscriptSpeaker(SpeakerId.Unknown, Speakers.Unknown, "system", Diarized: true),
+                new TranscriptSpeaker(SpeakerId.Me, Speakers.Me, "mic", Diarized: false),
+                new TranscriptSpeaker(SpeakerId.Diarized("system", 1), Speakers.Numbered(1), "system", Diarized: true),
+            ],
+            result.Speakers);
+    }
+
+    [Fact]
+    public void Merge_FixedTracksWithOffsets_AreMergedOnSessionTimeWithTheirNames()
+    {
+        // Arrange
+        var anna = new FixedSpeaker(new SpeakerId("mz:anna"), "Анна");
+        var boris = new FixedSpeaker(new SpeakerId("mz:boris"), "Борис");
+        TrackWords[] tracks =
+        [
+            new("me", TimeSpan.Zero, FixedSpeaker.Me, [W("Начнём?", 1, 1.5)], []),
+            new("anna", TimeSpan.FromSeconds(2), anna, [W("Да.", 0.5, 0.8)], []),
+            new("boris", TimeSpan.FromSeconds(5), boris, [W("Готов.", 0, 0.5)], []),
+        ];
+
+        // Act
+        var result = TranscriptMerger.Merge(tracks);
+
+        // Assert
+        Assert.Equal(["Я", "Анна", "Борис"], Names(result));
+        Assert.Equal([1.0, 2.5, 5.0], result.Utterances.Select(u => u.Start.TotalSeconds));
+        Assert.All(result.Speakers, s => Assert.False(s.IsNameable));
+    }
+
+    [Fact]
+    public void Merge_TwoDiarizedTracks_NumberSpeakersAcrossTracks()
+    {
+        // Arrange
+        TrackWords[] tracks =
+        [
+            new("a", TimeSpan.Zero, DiarizedSpeakers.Instance, [W("раз", 0, 0.5)], [S(0, 1, 0)]),
+            new("b", TimeSpan.Zero, DiarizedSpeakers.Instance, [W("два", 3, 3.5)], [S(3, 4, 0)]),
+        ];
+
+        // Act
+        var result = TranscriptMerger.Merge(tracks);
+
+        // Assert
+        Assert.Equal([SpeakerId.Diarized("a", 1), SpeakerId.Diarized("b", 2)], result.Utterances.Select(u => u.Speaker));
+        Assert.Equal([Speakers.Numbered(1), Speakers.Numbered(2)], Names(result));
+    }
+
+    [Fact]
+    public void Merge_DiarizedTrackWithOffset_FindsSpeakerOnTrackTime()
+    {
+        // Arrange
+        TrackWords[] tracks = [new("system", TimeSpan.FromSeconds(10), DiarizedSpeakers.Instance, [W("слово", 1, 1.5)], [S(0.5, 2, 3)])];
+
+        // Act
+        var result = TranscriptMerger.Merge(tracks);
+
+        // Assert
+        var word = Assert.Single(Assert.Single(result.Utterances).Words);
+        Assert.Equal(SpeakerId.Diarized("system", 1), word.Speaker);
+        Assert.Equal(TimeSpan.FromSeconds(11), word.Start);
     }
 
     [Fact]
@@ -292,9 +375,9 @@ public class TranscriptMergerTests
         Word[] mic = [W(" Привет,", 0, 0.4), W(" как", 0.5, 0.7), W(" дела?", 0.8, 1.1)];
 
         // Act
-        var result = TranscriptMerger.Merge(mic, [], [], 0);
+        var result = Merge(mic, [], [], 0);
 
         // Assert
-        Assert.Equal("Привет, как дела?", Assert.Single(result).Text);
+        Assert.Equal("Привет, как дела?", Assert.Single(result.Utterances).Text);
     }
 }

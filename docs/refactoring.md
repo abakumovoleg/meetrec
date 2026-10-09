@@ -66,31 +66,31 @@
 
 **Формат и раскладка сессии**
 
-- [ ] `SessionLayout` — единственное место с именами файлов (`mic.wav`, `system.wav`, `session.json`, `transcript.*`, `<имя>.transcript.*`); убрать константы из `TranscribeInput`, `TranscriptWriter`, `SessionDirectory`.
-- [ ] `session.json` v2: `schemaVersion: 2`, `tracks: [{ file, offsetMs, source: mic|system|participant, speaker?: { id, name } }]`. Чтение v1 (без `schemaVersion`) → две дорожки, `offsetMs` микрофона из старого поля. Запись — только v2. Тесты на оба.
-- [ ] `TranscribeInput` → список `SourceTrack(Id, Path, Offset, SpeakerSource)`, где `SpeakerSource` = `Fixed(SpeakerId, Name)` | `Diarized`. Одиночный WAV — одна `Diarized`-дорожка; папка сессии — `mic` как `Fixed("me", "Я")` + `system` как `Diarized`.
+- [x] `SessionLayout` — единственное место с именами файлов (`mic.wav`, `system.wav`, `session.json`, `transcript.*`, `<имя>.transcript.*`); убрать константы из `TranscribeInput`, `TranscriptWriter`, `SessionDirectory`.
+- [x] `session.json` v2: `schemaVersion: 2`, `tracks: [{ file, offsetMs, source: mic|system|participant, speaker?: { id, name } }]`. Чтение v1 (без `schemaVersion`) → две дорожки, `offsetMs` микрофона из старого поля. Запись — только v2. Тесты на оба.
+- [x] `TranscribeInput` → список `SourceTrack(Id, Path, Offset, SpeakerSource)`, где `SpeakerSource` = `Fixed(SpeakerId, Name)` | `Diarized`. Одиночный WAV — одна `Diarized`-дорожка; папка сессии — `mic` как `Fixed("me", "Я")` + `system` как `Diarized`.
 
 **Спикеры**
 
-- [ ] `SpeakerId` — стабильный идентификатор: `me`, `sys:1`, `sys:2`, `unknown`, для Meetzone — `mz:<login>`. В `TranscriptWord` — `SpeakerId` и `TrackId` (строка) вместо `Speaker`/`Track`/`Label`; удалить `SpeakerLabel`.
-- [ ] Имена — отдельная таблица `SpeakerId → Name` у расшифровки (`Transcript { Speakers, Utterances }`); `Speakers.Numbered`/`Me`/`Unknown` — только имена по умолчанию.
-- [ ] `TranscriptMerger.Merge(IReadOnlyList<TrackWords>, сегменты диаризации по дорожке)`: сдвиг каждой дорожки — свой; `Fixed` → его id, `Diarized` → `trackId:N` по сегментам; нумерация спикеров — по первому появлению, как сейчас.
-- [ ] Группировка реплик по `SpeakerId` + дорожке; переименование в одно имя по-прежнему склеивает соседние реплики (как сейчас) — проверить тестом.
-- [ ] `SpeakerNames`, `SpeakerProfiles`, `NameHints`: «можно назвать» = спикер из `Diarized`-дорожки и не `unknown` (вместо `Track.System`).
-- [ ] `DiarizationSettings.Choose(totalSpeakers, fixedSpeakers, threshold)`: кластеров = всего − число `Fixed`-спикеров (сейчас `hasMicTrack ? total − 1`).
-- [ ] Форматтеры md/srt берут имя из таблицы; вывод md/srt не меняется.
+- [x] `SpeakerId` — стабильный идентификатор: `me`, `sys:1`, `sys:2`, `unknown`, для Meetzone — `mz:<login>`. В `TranscriptWord` — `SpeakerId` и `TrackId` (строка) вместо `Speaker`/`Track`/`Label`; удалить `SpeakerLabel`.
+- [x] Имена — отдельная таблица `SpeakerId → Name` у расшифровки (`Transcript { Speakers, Utterances }`); `Speakers.Numbered`/`Me`/`Unknown` — только имена по умолчанию.
+- [x] `TranscriptMerger.Merge(IReadOnlyList<TrackWords>, сегменты диаризации по дорожке)`: сдвиг каждой дорожки — свой; `Fixed` → его id, `Diarized` → `trackId:N` по сегментам; нумерация спикеров — по первому появлению, как сейчас.
+- [x] Группировка реплик по `SpeakerId` + дорожке; переименование в одно имя по-прежнему склеивает соседние реплики (как сейчас) — проверить тестом.
+- [x] `SpeakerNames`, `SpeakerProfiles`, `NameHints`: «можно назвать» = спикер из `Diarized`-дорожки и не `unknown` (вместо `Track.System`).
+- [x] `DiarizationSettings.Choose(totalSpeakers, fixedSpeakers, threshold)`: кластеров = всего − число `Fixed`-спикеров (сейчас `hasMicTrack ? total − 1`).
+- [x] Форматтеры md/srt берут имя из таблицы; вывод md/srt не меняется.
 
 **`transcript.json` v2**
 
-- [ ] `schemaVersion: 2`, `speakers: [{ id, name, track }]`, в репликах и словах — `speakerId`, `track` (строка). Отображаемое имя в реплике оставить для читаемости (`speaker`), но читать только `speakerId` + таблицу.
-- [ ] `TranscriptReader` читает v1: `label ?? speaker` → id (`Я` → `me`, `Спикер N` → `sys:N`, `Спикер ?` → `unknown`), имя → таблица. Тест на json, записанном текущей версией (положить фикстуру).
-- [ ] `meetrec names` на старой расшифровке пересохраняет её в v2.
+- [x] `schemaVersion: 2`, `speakers: [{ id, name, track }]`, в репликах и словах — `speakerId`, `track` (строка). Отображаемое имя в реплике оставить для читаемости (`speaker`), но читать только `speakerId` + таблицу.
+- [x] `TranscriptReader` читает v1: `label ?? speaker` → id (`Я` → `me`, `Спикер N` → `sys:N`, `Спикер ?` → `unknown`), имя → таблица. Тест на json, записанном текущей версией (положить фикстуру).
+- [x] `meetrec names` на старой расшифровке пересохраняет её в v2.
 
 **Проверка**
 
-- [ ] Эталон: md/srt совпали побайтно, json эквивалентен (скрипт сравнения в `tools/eval`).
-- [ ] Синтетическая сессия с тремя `Fixed`-дорожками (имитация Meetzone, `say -v Milena`) склеивается по времени с именами без диаризации — тест конвейера на фейках.
-- [ ] README: раздел про формат `session.json`/`transcript.json`.
+- [x] Эталон: md/srt совпали побайтно, json эквивалентен (скрипт сравнения в `tools/eval`).
+- [x] Синтетическая сессия с тремя `Fixed`-дорожками (имитация Meetzone, `say -v Milena`) склеивается по времени с именами без диаризации — тест конвейера на фейках.
+- [x] README: раздел про формат `session.json`/`transcript.json`.
 
 Готово, когда: в коде нет `Track.Mic`/`Track.System` вне чтения v1 и записи сессии; шаг 18 сводится к новому источнику дорожек.
 

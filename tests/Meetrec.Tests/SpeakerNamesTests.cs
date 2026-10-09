@@ -5,100 +5,93 @@ namespace Meetrec.Tests;
 
 public class SpeakerNamesTests
 {
-    private static readonly string S1 = Speakers.Numbered(1);
-    private static readonly string S2 = Speakers.Numbered(2);
-
     [Fact]
-    public void Current_MixedTracks_ListsSystemSpeakersInOrderOfAppearanceWithoutMeAndUnknown()
+    public void Nameable_MixedSpeakers_ListsDiarizedInTableOrderWithoutMeAndUnknown()
     {
         // Arrange
-        Utterance[] utterances =
+        var conversation = Conversation(
         [
-            Said(Speakers.Me, 0, "привет", Track.Mic),
+            Said(SpeakerId.Me, 0, "привет"),
             Said(S2, 1, "да"),
-            Said(Speakers.Unknown, 2, "ну"),
+            Said(SpeakerId.Unknown, 2, "ну"),
             Said(S1, 3, "ага"),
             Said(S2, 4, "ещё"),
-        ];
+        ]);
 
         // Act
-        var current = SpeakerNames.Current(utterances);
+        var nameable = SpeakerNames.Nameable(conversation);
 
         // Assert
-        Assert.Equal([new SpeakerName(S2, S2), new SpeakerName(S1, S1)], current);
+        Assert.Equal([S2, S1], nameable.Select(s => s.Id));
     }
 
     [Fact]
-    public void Apply_Name_ReplacesSpeakerAndKeepsLabel()
+    public void Apply_Name_RenamesSpeakerAndKeepsIds()
     {
         // Arrange
-        Utterance[] utterances = [Said(S1, 0, "привет всем")];
+        var conversation = Conversation([Said(S1, 0, "привет всем")]);
 
         // Act
-        var result = SpeakerNames.Apply(utterances, new Dictionary<string, string> { [S1] = "Олег" });
+        var result = SpeakerNames.Apply(conversation, new Dictionary<SpeakerId, string> { [S1] = "Олег" });
 
         // Assert
-        var utterance = Assert.Single(result);
-        Assert.Equal("Олег", utterance.Speaker);
-        Assert.All(utterance.Words, w => Assert.Equal(S1, w.Label));
-        Assert.Equal([new SpeakerName(S1, "Олег")], SpeakerNames.Current(result));
+        var utterance = Assert.Single(result.Utterances);
+        Assert.Equal("Олег", result.NameOf(utterance.Speaker));
+        Assert.All(utterance.Words, w => Assert.Equal(S1, w.Speaker));
     }
 
     [Fact]
     public void Apply_SameNameForAdjacentSpeakers_MergesUtterances()
     {
         // Arrange
-        Utterance[] utterances = [Said(S1, 0, "раз два"), Said(S2, 1, "три")];
+        var conversation = Conversation([Said(S1, 0, "раз два"), Said(S2, 1, "три")]);
 
         // Act
-        var result = SpeakerNames.Apply(utterances, new Dictionary<string, string> { [S1] = "Саша", [S2] = "Саша" });
+        var result = SpeakerNames.Apply(conversation, new Dictionary<SpeakerId, string> { [S1] = "Саша", [S2] = "Саша" });
 
         // Assert
-        var utterance = Assert.Single(result);
+        var utterance = Assert.Single(result.Utterances);
         Assert.Equal("раз два три", utterance.Text);
-        Assert.Equal([S1, S1, S2], utterance.Words.Select(w => w.Label));
+        Assert.Equal([S1, S1, S2], utterance.Words.Select(w => w.Speaker));
     }
 
     [Fact]
-    public void Apply_LabelAsName_ClearsLabel()
+    public void Apply_SameNameForSpeakersOnDifferentTracks_KeepsUtterancesApart()
     {
         // Arrange
-        Utterance[] named = [Utterance(Word("да", 0, 0.5, "Олег", Track.System, S1))];
+        var conversation = Conversation([Said(SpeakerId.Me, 0, "раз"), Said(S1, 0.5, "два")]);
 
         // Act
-        var result = SpeakerNames.Apply(named, new Dictionary<string, string> { [S1] = S1 });
+        var result = SpeakerNames.Apply(conversation, new Dictionary<SpeakerId, string> { [S1] = Speakers.Me });
 
         // Assert
-        var word = Assert.Single(Assert.Single(result).Words);
-        Assert.Equal(S1, word.Speaker);
-        Assert.Null(word.Label);
+        Assert.Equal(2, result.Utterances.Count);
     }
 
     [Fact]
     public void Apply_MeAndUnknown_AreNotRenamed()
     {
         // Arrange
-        Utterance[] utterances = [Said(Speakers.Me, 0, "да", Track.Mic), Said(Speakers.Unknown, 3, "нет")];
-        var names = new Dictionary<string, string> { [Speakers.Me] = "Олег", [Speakers.Unknown] = "Кто-то" };
+        var conversation = Conversation([Said(SpeakerId.Me, 0, "да"), Said(SpeakerId.Unknown, 3, "нет")]);
+        var names = new Dictionary<SpeakerId, string> { [SpeakerId.Me] = "Олег", [SpeakerId.Unknown] = "Кто-то" };
 
         // Act
-        var result = SpeakerNames.Apply(utterances, names);
+        var result = SpeakerNames.Apply(conversation, names);
 
         // Assert
-        Assert.Equal([Speakers.Me, Speakers.Unknown], result.Select(u => u.Speaker));
+        Assert.Equal([Speakers.Me, Speakers.Unknown], result.Utterances.Select(u => result.NameOf(u.Speaker)));
     }
 
     [Fact]
-    public void Reset_NamedTranscript_RestoresLabelsAndSplitsMergedSpeakers()
+    public void Reset_NamedConversation_RestoresDefaultNamesAndSplitsMergedSpeakers()
     {
         // Arrange
-        Utterance[] named = [Utterance(Word("раз", 0, 0.5, "Саша", Track.System, S1), Word("два", 0.6, 1, "Саша", Track.System, S2))];
+        var named = Conversation([Utterance(Word("раз", 0, 0.5, S1), Word("два", 0.6, 1, S2))], (S1, "Саша"), (S2, "Саша"));
 
         // Act
         var result = SpeakerNames.Reset(named);
 
         // Assert
-        Assert.Equal([S1, S2], result.Select(u => u.Speaker));
-        Assert.All(result.SelectMany(u => u.Words), w => Assert.Null(w.Label));
+        Assert.Equal([Speakers.Numbered(1), Speakers.Numbered(2)], result.Utterances.Select(u => result.NameOf(u.Speaker)));
     }
 }

@@ -1,6 +1,7 @@
 namespace Meetrec.Core.Transcript;
 
 public sealed record SpeakerProfile(
+    SpeakerId Id,
     string Label,
     double TalkShare,
     int UtteranceCount,
@@ -13,17 +14,19 @@ public static class SpeakerProfiles
 
     public const int LongestCount = 5;
 
-    // Expects utterances labeled by diarization (see SpeakerNames.Reset), so that speakers already merged under one name
+    // Expects a conversation with default names (see SpeakerNames.Reset), so that speakers already merged under one name
     // are still shown separately.
-    public static IReadOnlyList<SpeakerProfile> Build(IReadOnlyList<Utterance> utterances)
+    public static IReadOnlyList<SpeakerProfile> Build(Conversation conversation)
     {
+        var utterances = conversation.Utterances;
         var total = utterances.Sum(u => (u.End - u.Start).TotalSeconds);
-        return [.. SpeakerNames.Current(utterances).Select(s =>
+        return [.. SpeakerNames.Nameable(conversation).Select(s =>
         {
-            var own = utterances.Where(u => u.Track == Track.System && u.Speaker == s.Label).ToList();
+            var own = utterances.Where(u => u.Speaker == s.Id).ToList();
             var talk = own.Sum(u => (u.End - u.Start).TotalSeconds);
             return new SpeakerProfile(
-                s.Label,
+                s.Id,
+                s.Name,
                 total > 0 ? talk / total : 0,
                 own.Count,
                 PickSamples(own),

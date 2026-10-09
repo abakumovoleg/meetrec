@@ -16,16 +16,16 @@ public static class NameHints
 
     private static readonly char[] Punctuation = [',', '.', '?', '!', ':', ';', '…', '—', '-'];
 
-    // Expects utterances labeled by diarization (see SpeakerNames.Reset). Each name is suggested to one speaker at most.
-    public static IReadOnlyDictionary<string, NameHint> Find(IReadOnlyList<Utterance> utterances)
+    // Expects a conversation with default names (see SpeakerNames.Reset). Each name is suggested to one speaker at most.
+    public static IReadOnlyDictionary<SpeakerId, NameHint> Find(Conversation conversation)
     {
-        var mentions = new Dictionary<(string Speaker, string Name), List<(Utterance Utterance, int Index)>>();
+        var utterances = conversation.Utterances;
+        var mentions = new Dictionary<(SpeakerId Speaker, string Name), List<(Utterance Utterance, int Index)>>();
         for (var i = 0; i + 1 < utterances.Count; i++)
         {
             var (said, reply) = (utterances[i], utterances[i + 1]);
             if (reply.Speaker == said.Speaker
-                || reply.Track != Track.System
-                || reply.Speaker == Speakers.Unknown
+                || !conversation.Speaker(reply.Speaker).IsNameable
                 || reply.Start - said.End > ReplyWindow)
             {
                 continue;
@@ -46,7 +46,7 @@ public static class NameHints
             }
         }
 
-        var hints = new Dictionary<string, NameHint>();
+        var hints = new Dictionary<SpeakerId, NameHint>();
         var used = new HashSet<string>();
         foreach (var ((speaker, name), list) in mentions.OrderByDescending(m => m.Value.Count).ThenBy(m => m.Value[0].Utterance.Start))
         {

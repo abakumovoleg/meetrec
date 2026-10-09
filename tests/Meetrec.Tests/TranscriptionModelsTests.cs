@@ -8,7 +8,7 @@ public class TranscriptionModelsTests
     public void Required_CoreMl_IncludesEncoderAndChosenEmbedding()
     {
         // Arrange
-        var diarization = DiarizationSettings.Choose(3, hasMicTrack: true, threshold: null);
+        var diarization = DiarizationSettings.Choose(3, fixedSpeakers: 1, threshold: null);
 
         // Act
         var models = TranscriptionModels.Required("tiny", coreMl: true, diarization);
@@ -23,7 +23,7 @@ public class TranscriptionModelsTests
     public void Required_WithoutCoreMl_SkipsEncoder()
     {
         // Arrange
-        var diarization = DiarizationSettings.Choose(null, hasMicTrack: false, threshold: null);
+        var diarization = DiarizationSettings.Choose(null, fixedSpeakers: 0, threshold: null);
 
         // Act
         var models = TranscriptionModels.Required("small", coreMl: false, diarization);
