@@ -19,13 +19,14 @@ public sealed class SpeechRecognizer(WhisperTranscriber whisper, SileroVad vad)
         if (mask.IsEmpty)
         {
             progress?.Report(100);
-            return new Recognition([], new RecognitionStats(null, 0, detected.Count, TimeSpan.Zero, 0, 0, 0));
+            return new Recognition([], new RecognitionStats(null, 0, detected.Count, TimeSpan.Zero, 0, 0, 0, 0));
         }
 
         // Pauses are deliberately not cut out before Whisper: on real calls condensed audio lost phrases and
         // degraded the text, so VAD is applied to the result instead.
         var result = await TranscribeWindowAsync(clip, new SpeechRegion(mask.Lead(LeadPadding), clip.Duration), language, progress, ct);
-        var words = result.Words;
+        var words = Hallucinations.Remove(result.Words);
+        var hallucinations = result.Words.Count - words.Count;
 
         var sparse = SpeechRepair.FindSparse(mask.Regions, words, SpeechRepair.DefaultMinWordsPerSecond, SpeechRepair.DefaultMaxWordLength);
         var windows = SpeechRepair.Windows(sparse, clip.Duration, SpeechRepair.DefaultGroupGap, SpeechRepair.DefaultWindowPadding);
@@ -34,7 +35,10 @@ public sealed class SpeechRecognizer(WhisperTranscriber whisper, SileroVad vad)
             var repaired = new List<Word>();
             foreach (var window in windows)
             {
-                repaired.AddRange((await TranscribeWindowAsync(clip, window, language, null, ct)).Words);
+                var raw = (await TranscribeWindowAsync(clip, window, language, null, ct)).Words;
+                var kept = Hallucinations.Remove(raw);
+                hallucinations += raw.Count - kept.Count;
+                repaired.AddRange(kept);
             }
 
             words = SpeechRepair.Replace(words, repaired, sparse);
@@ -42,7 +46,7 @@ public sealed class SpeechRecognizer(WhisperTranscriber whisper, SileroVad vad)
 
         var masked = mask.Apply(words, SpeechMask.DefaultMaxSnapDistance);
         var stats = new RecognitionStats(
-            result.Language, mask.Regions.Count, detected.Count - regions.Count, speech, words.Count, words.Count - masked.Count, sparse.Count > 0 ? windows.Count : 0);
+            result.Language, mask.Regions.Count, detected.Count - regions.Count, speech, words.Count, hallucinations, words.Count - masked.Count, sparse.Count > 0 ? windows.Count : 0);
         return new Recognition(masked, stats);
     }
 

@@ -10,5 +10,6 @@ public sealed record RecognitionStats(
     int QuietRegions,
     TimeSpan Speech,
     int WhisperWords,
+    int Hallucinations,
     int DroppedWords,
     int RepairWindows);
