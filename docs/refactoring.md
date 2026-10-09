@@ -47,7 +47,7 @@
 
 Готово, когда: эталон совпал; оркестрация покрыта тестами; в `Meetrec.Core` нет логики, специфичной для Whisper.
 
-## R3. Конвейер расшифровки из CLI в библиотеку — коммит: —
+## R3. Конвейер расшифровки из CLI в библиотеку — коммит: `c7b5330`
 
 - [x] Проект `Meetrec.Pipeline` (ссылается на Core, Asr, Diarization): `TranscriptionPipeline.RunAsync(input, TranscriptionOptions, ITranscriptionObserver, ct)` → `TranscriptionResult` (реплики, статистика по дорожкам, время этапов).
 - [x] `TranscriptionOptions` = язык, модель Whisper, `RecognitionOptions`, `DiarizationSettings`.
