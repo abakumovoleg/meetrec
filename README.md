@@ -5,6 +5,7 @@ CLI-рекордер созвонов: пишет микрофон и систе
 - Распознавание речи — [Whisper.net](https://github.com/sandrohanea/whisper.net) (whisper.cpp), на Mac через CoreML.
 - Разделение по спикерам — [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) (pyannote + модель голоса).
 - Ваша речь с микрофона подписывается «Я» без всякой диаризации; голоса собеседников разделяются только на системной дорожке.
+- Созвон в Meetzone можно записать без диаризации: голос каждого участника приходит отдельной дорожкой с его именем (через расширение Chrome, см. [ниже](#запись-созвона-в-meetzone)).
 
 Результат — `transcript.md`, `transcript.json` и `transcript.srt`:
 
@@ -20,13 +21,29 @@ CLI-рекордер созвонов: пишет микрофон и систе
 
 | | macOS (Apple Silicon) | Windows |
 | --- | --- | --- |
-| Запись (`record`, `run`, `devices`) | да, macOS 14.2+ | да, проверено на Windows 11 |
-| Расшифровка готовой записи (`transcribe`, `names`) | да, macOS 15+ | собирается, не проверялась |
-| Запись Meetzone (`record --meetzone`, Chrome) | да, проверено на живом созвоне | собирается, не проверялась |
+| Запись (`record`, `run`, `devices`) | да, macOS 14.2+ | да, Windows 11 |
+| Расшифровка (`transcribe`, `names`) | да, macOS 15+ | да, Windows 11 (GPU через Vulkan) |
+| Запись Meetzone (`record --meetzone`, Chrome) | да | собирается, не проверялась |
+
+Только Apple Silicon на Mac и x64 на Windows. Windows 10 и macOS 14 (для расшифровки) не проверялись.
 
 ## Установка
 
-Готовых сборок пока нет — собирается из исходников.
+### Готовая сборка
+
+Сборка — папка с `meetrec` (на Windows `meetrec.exe`), нативными библиотеками рядом, на macOS ещё `meetrec-capture`, и папкой `meetzone-extension`. .NET не нужен. Распакуйте или скопируйте папку целиком — по отдельности файлы не работают — и добавьте её в `PATH`.
+
+**macOS.** Сборка не подписана: если папка пришла из браузера или мессенджера, macOS заблокирует запуск. Снимите карантин:
+
+```sh
+xattr -d com.apple.quarantine meetrec meetrec-capture
+```
+
+(или `xattr -dr com.apple.quarantine .` для всей папки). Нужна macOS 15 и новее — на 14 запись работает, а расшифровка нет: библиотеки Whisper.net собраны под 15.0.
+
+**Windows.** Нужны Windows 11 (минимальная версия по Whisper.net) и [Visual C++ Redistributable 2022 x64](https://aka.ms/vs/17/release/vc_redist.x64.exe). Неподписанный `meetrec.exe` может вызвать предупреждение SmartScreen — «Подробнее» → «Выполнить в любом случае». Процессор — с AVX2.
+
+### Из исходников
 
 Нужно:
 
@@ -177,6 +194,12 @@ afconvert -f WAVE -d LEI16@16000 -c 1 audio.mp4 audio.wav
 }
 ```
 
+В записи Meetzone каждая дорожка — участник: `"source": "participant"`, спикер `mz:<логин>` с именем из Meetzone, файл `mz-<логин>.wav`. Такие дорожки не диаризуются, а имена в `meetrec names` не спрашиваются — они уже известны.
+
+```json
+{ "file": "mz-ivanov.wav", "source": "participant", "offsetMs": 624, "speaker": { "id": "mz:ivanov", "name": "Иван Иванов" } }
+```
+
 Файлы прежнего формата (без `schemaVersion`) читаются; `meetrec names` пересохраняет `transcript.json` в новом.
 
 ## Имена спикеров
@@ -218,15 +241,17 @@ meetrec models download whisper-small whisper-small-coreml
 
 ## Советы
 
-- **Наушники.** Без них голоса собеседников из динамиков попадают в микрофон и дублируются репликами «Я».
+- **Наушники.** Без них голоса собеседников из динамиков попадают в микрофон и дублируются репликами «Я». В записи Meetzone своя дорожка берётся из браузера после его эхоподавления, но и там наушники надёжнее.
+- **Meetzone — через `--meetzone`.** Если созвон в Meetzone, такая запись точнее обычной: имена настоящие, голоса не путаются, распознаются только отрезки речи.
 - **`--speakers`.** Если число участников известно, укажите его (вместе с собой) — без него голоса иногда склеиваются или дробятся.
-- **Скорость.** 8-минутный созвон расшифровывается за ≈ 45 с на Mac с Apple Silicon. На машинах без GPU берите `--model small`.
+- **Скорость.** 8-минутный созвон расшифровывается за ≈ 45 с на Mac с Apple Silicon; часовой на Windows с GPU — ≈ 8 мин (распознавание 1,5 мин, остальное — диаризация). На машинах без GPU берите `--model small`.
 
 ## Известные ограничения
 
 - Если вопрос и ответ разных людей идут без паузы, они могут попасть в одну реплику.
 - Слова, которые не удалось отнести ни к одному голосу, подписаны «Спикер ?».
 - Смена микрофона во время записи (например, отключение наушников) может остановить микрофонную дорожку; системный звук продолжает писаться.
+- Meetzone: только Chrome (и браузеры на Chromium с расширениями); десктопное приложение Chatzone не поддерживается. Созвон вдвоём, смена микрофона, фоновая вкладка и созвоны дольше часа ещё проверяются.
 
 ## Разработка
 
@@ -234,7 +259,19 @@ meetrec models download whisper-small whisper-small-coreml
 dotnet build
 dotnet test
 cd native/meetrec-capture && swift build -c release --arch arm64 && swift test
+node --test 'browser/meetzone/test/*.test.js'
 ```
+
+| Где | Что |
+| --- | --- |
+| `src/Meetrec.Cli` | команды, консольный вывод |
+| `src/Meetrec.Core` | сессия, склейка дорожек, форматы, модели |
+| `src/Meetrec.Asr`, `src/Meetrec.Diarization` | распознавание (Whisper, VAD, эвристики) и диаризация |
+| `src/Meetrec.Pipeline` | конвейер расшифровки |
+| `src/Meetrec.Capture.Mac`, `native/meetrec-capture` | запись на macOS: обёртка и Swift-хелпер |
+| `src/Meetrec.Capture.Windows` | запись на Windows (WASAPI) |
+| `src/Meetrec.Capture.Meetzone`, `browser/meetzone` | запись Meetzone: приём в meetrec и расширение Chrome с протоколом |
+| `tools/eval` | стенд замеров (`meetrec-eval`) |
 
 Сборка для распространения — self-contained, .NET на целевой машине не нужен:
 
@@ -243,6 +280,6 @@ dotnet publish src/Meetrec.Cli -c Release -r osx-arm64 -o publish/osx-arm64
 dotnet publish src/Meetrec.Cli -c Release -r win-x64 -o publish/win-x64
 ```
 
-В папке — `meetrec` и нативные библиотеки рядом с ним (на macOS — ещё `meetrec-capture`); переносить её нужно целиком.
+В папке — `meetrec`, нативные библиотеки рядом с ним (на macOS — ещё `meetrec-capture`) и `meetzone-extension`; переносить её нужно целиком.
 
 Ход работы — [`docs/progress.md`](docs/progress.md), обоснования решений с замерами — [`docs/decisions.md`](docs/decisions.md).

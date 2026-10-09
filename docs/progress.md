@@ -40,6 +40,7 @@
 | R✓ | Проверка рефакторинга по плану: сборка, 218 + 16 тестов, эталон (md/srt побайтно, json по содержанию). Поправлено: на Windows ошибка дозаписи WAV при остановке — `CaptureException` (и вторая дорожка всё равно дописывается), так что `run` расшифровывает читаемые файлы; в «Вне плана» — ограничения нескольких диаризуемых дорожек | `3b995f7` |
 | 18а | Сессия участников Meetzone и распознавание по окнам речи: дорожка `participant` распознаётся только по окнам вокруг речи (`SpeechRecognizer.RecognizeSegmentsAsync`, `SpeechSegments`), окна склеиваются в пачки до 28 с через 1 с тишины; `SourceTrack.Source`; `SessionLayout.ParticipantFile` (`mz-<логин>.wav`), `SpeakerId.Meetzone`; стенд `meetrec-eval meetzone` собирает сессию из записи отладочного расширения (дорожка на логин, своя — исходящий трек с именем из presence) | `c86063e` |
 | 18б | Запись Meetzone: `record --meetzone` / `run --meetzone`; расширение Chrome `browser/meetzone` (MV3: `page.js` в мире страницы — presence, `AudioSourcesMap`, слоты из SDP, запись слотов и своего трека через `AudioContext` 16 кГц только между `start`/`stop`; `bridge.js`; service worker с WebSocket на `127.0.0.1:47823`), копируется в `meetzone-extension` рядом с `meetrec`; `Meetrec.Capture.Meetzone`: протокол, сервер на `TcpListener` (только `Origin: chrome-extension://`), `MeetzoneRecorder` — дорожка на логин по времени `AudioContext`, ожидание неизвестного владельца, перезагрузка страницы по wall clock, P2P по msid; `Wav16Writer` → Core; стенд `meetrec-eval meetzone-replay` | `72fad3e` |
+| 16 | README по текущему состоянию: установка готовой сборки (`xattr` на macOS; Windows 11, VC++ Redist 2022, SmartScreen, AVX2), таблица «Что работает» по проверкам (расшифровка на Windows проверена), Meetzone во вступлении, советах и ограничениях, формат сессии участников, раскладка проекта и тесты расширения в «Разработке» | — |
 
 253 юнит-теста в `tests/Meetrec.Tests` (`dotnet test`), 16 в `native/meetrec-capture` (`swift test`) и 4 у расширения (`node --test 'browser/meetzone/test/*.test.js'`), все зелёные.
 
@@ -49,7 +50,7 @@
 
 ## Осталось
 
-Предлагаемый порядок: 18в → 16 → 15.
+Предлагаемый порядок: 15, 18в — по мере созвонов.
 
 **Рефакторинг перед шагом 18 сделан** (R0–R5, `docs/refactoring.md`): сессия — список дорожек с фиксированным спикером или диаризацией, шаг 18 сводится к новому источнику дорожек.
 
@@ -74,7 +75,7 @@
 **Этап 5 — релиз**
 
 - [ ] **15. CI** `.github/workflows/release.yml` по тегу `v*`: тесты, сборка Swift, publish, архивы `meetrec-<ver>-win-x64.zip` / `meetrec-<ver>-osx-arm64.tar.gz`, GitHub Release.
-- [ ] **16. README:** написан для текущего состояния (сборка из исходников, разрешения macOS и Windows, команды, запись на Windows, имена спикеров, модели, советы). Дописать вместе с шагом 15: установка из архива, `xattr -d com.apple.quarantine meetrec meetrec-capture`, Windows 10 vs 11 (Whisper.net требует 11 + VC++ Redist 2022).
+- [x] **16. README** — см. таблицу выше. После шага 15 дописать ссылку на GitHub Releases и имена архивов.
 
 **Открытые вопросы**
 
