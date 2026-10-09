@@ -21,7 +21,7 @@ internal sealed class TranscribeOptions
     private readonly Option<string> _language = new Option<string>("--lang")
     {
         Description = "Язык речи",
-        DefaultValueFactory = _ => "auto",
+        DefaultValueFactory = _ => "ru",
     }.AcceptOnlyFromAmong(Languages);
 
     private readonly Option<string> _model = new Option<string>("--model")
