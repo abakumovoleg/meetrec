@@ -8,6 +8,6 @@
     <Project Path="src/Meetrec.Diarization/Meetrec.Diarization.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Meetrec.Core.Tests/Meetrec.Core.Tests.csproj" />
+    <Project Path="tests/Meetrec.Tests/Meetrec.Tests.csproj" />
   </Folder>
 </Solution>

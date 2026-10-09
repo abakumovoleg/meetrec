@@ -6,8 +6,9 @@
 
 ## Эталон для проверки
 
-- [ ] Снять базовый результат до R2: `transcribe` реальной 8-минутной записи (`meeting.wav`, см. `CLAUDE.md`) и папки сессии `out-new/` с фиксированными параметрами (`--lang ru --model large-v3-turbo`, без имён, плюс один прогон с `--speakers 5`). Сохранить `transcript.md`/`json` в `/tmp/meetrec-eval/baseline/` (а после R3 — в `tools/eval/baseline/` вне git, если там голоса).
+- [x] Снять базовый результат до R2: `transcribe` реальной 8-минутной записи (`meeting.wav`, см. `CLAUDE.md`) и папки сессии `out-new/` с фиксированными параметрами (`--lang ru --model large-v3-turbo`, без имён, плюс один прогон с `--speakers 5`). Сохранить `transcript.md`/`json` в `/tmp/meetrec-eval/baseline/` (а после R3 — в `tools/eval/baseline/` вне git, если там голоса).
 - Проверка после R2, R3, R4: `transcript.md` совпадает побайтно; `transcript.json` совпадает по содержимому с поправкой на новый формат (R4).
+- Снято на R1 (`9ae091b`): `out-new/` не нашлась, вместо неё — сессия `/tmp/meetrec-eval/rec1009` (19 мин, две дорожки). Эталон и копии входов — `/tmp/meetrec-eval/baseline/`, сверка — `baseline/check.sh <meetrec>`. Два прогона совпали побайтно — эталон детерминирован.
 
 ---
 
@@ -32,17 +33,17 @@
 
 ## R2. Распознавание: место, параметры, тесты — коммит: —
 
-- [ ] Перенести `SpeechMask`, `SpeechRepair`, `SpeechLevel`, `Hallucinations`, `SpeechRegion` из `Meetrec.Core.Audio` в `Meetrec.Asr` (namespace `Meetrec.Asr.Heuristics` или плоско); тесты — следом.
-- [ ] Тестовый проект ссылается на `Meetrec.Asr` и `Meetrec.Diarization` (решить: добавить ссылки в `Meetrec.Core.Tests` или переименовать в `Meetrec.Tests` — записать в decisions).
-- [ ] Интерфейсы `ITranscriber` (окно → слова + язык) и `IVad` (сэмплы → регионы); `WhisperTranscriber` и `SileroVad` их реализуют, `SpeechRecognizer` принимает интерфейсы.
-- [ ] `RecognitionOptions` — все пороги из `Default*` (громкость, маска, ремонт, отступ старта, параметры VAD, фильтр галлюцинаций) и подсказка по языку (вместо `language == "ru"` в `WhisperTranscriber`). Значения по умолчанию — текущие, с теми же комментариями-обоснованиями.
-- [ ] Тесты `SpeechRecognizer` на фейках:
-  - [ ] тишина / тихие регионы → Whisper не вызывается;
-  - [ ] основной проход стартует за `Lead` до первой речи, таймкоды окна сдвигаются обратно;
-  - [ ] регион без слов распознаётся повторно отдельным окном и заменяет пустоту;
-  - [ ] результат повторного окна тоже проходит фильтр галлюцинаций;
-  - [ ] слова вне речи отбрасываются, статистика (`RecognitionStats`) сходится.
-- [ ] Окно для Whisper без копии всей дорожки (`clip.Samples[from..to]`): проверить, принимает ли Whisper.net `ReadOnlyMemory<float>`; если нет — оставить и записать в decisions.
+- [x] Перенести `SpeechMask`, `SpeechRepair`, `SpeechLevel`, `Hallucinations`, `SpeechRegion` из `Meetrec.Core.Audio` в `Meetrec.Asr` (namespace `Meetrec.Asr.Heuristics` или плоско); тесты — следом.
+- [x] Тестовый проект ссылается на `Meetrec.Asr` и `Meetrec.Diarization` (решить: добавить ссылки в `Meetrec.Core.Tests` или переименовать в `Meetrec.Tests` — записать в decisions).
+- [x] Интерфейсы `ITranscriber` (окно → слова + язык) и `IVad` (сэмплы → регионы); `WhisperTranscriber` и `SileroVad` их реализуют, `SpeechRecognizer` принимает интерфейсы.
+- [x] `RecognitionOptions` — все пороги из `Default*` (громкость, маска, ремонт, отступ старта, параметры VAD, фильтр галлюцинаций) и подсказка по языку (вместо `language == "ru"` в `WhisperTranscriber`). Значения по умолчанию — текущие, с теми же комментариями-обоснованиями.
+- [x] Тесты `SpeechRecognizer` на фейках:
+  - [x] тишина / тихие регионы → Whisper не вызывается;
+  - [x] основной проход стартует за `Lead` до первой речи, таймкоды окна сдвигаются обратно;
+  - [x] регион без слов распознаётся повторно отдельным окном и заменяет пустоту;
+  - [x] результат повторного окна тоже проходит фильтр галлюцинаций;
+  - [x] слова вне речи отбрасываются, статистика (`RecognitionStats`) сходится.
+- [x] Окно для Whisper без копии всей дорожки (`clip.Samples[from..to]`): проверить, принимает ли Whisper.net `ReadOnlyMemory<float>`; если нет — оставить и записать в decisions.
 
 Готово, когда: эталон совпал; оркестрация покрыта тестами; в `Meetrec.Core` нет логики, специфичной для Whisper.
 

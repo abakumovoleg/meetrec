@@ -58,7 +58,7 @@ internal static class TranscribeCommand
         using (var whisper = WhisperTranscriber.Load(store.PathOf(ModelCatalog.WhisperModel(settings.Model))))
         {
             Console.Error.WriteLine($"Whisper: {settings.Model}, рантайм {WhisperTranscriber.LoadedRuntime ?? "?"}");
-            var recognizer = new SpeechRecognizer(whisper, new SileroVad(store.PathOf(ModelCatalog.SileroVad)));
+            var recognizer = new SpeechRecognizer(whisper, new SileroVad(store.PathOf(ModelCatalog.SileroVad)), RecognitionOptions.Default);
             if (mic is not null)
             {
                 micWords = await RecognizeAsync(recognizer, mic, TranscribeInput.MicFileName, settings.Language, ct);

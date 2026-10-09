@@ -33,8 +33,9 @@
 | 7д | Зацикливание Whisper: фраза из 2–15 слов, повторённая подряд ≥ 4 раз, остаётся один раз (`Hallucinations.Remove`), регион распознаётся заново — петля «Парк, ну, ты гони меня, я...» ×20 заменилась настоящей речью | `da52e6c` |
 | R0 | Рефакторинг, мелочи: `/out*/` в `.gitignore`; фильтр письменности в `Hallucinations` — латиница и кириллица целиком; `TimeFormat.Clock` в Core вместо двух копий; `ModelHttp` берёт версию из `AppVersion`; `WindowsCaptureBackend.Stream` → `CaptureStream` | `6ed8d78` |
 | R1 | Единая обработка ошибок: `MeetrecException` в Core (наследник — `CaptureException`), перевод ошибок ввода, файлов и моделей с контекстом; один обработчик в `Program` (1 / 130 / 70), команды без `catch … when`; модель Whisper загружается в `Load`, битый файл — понятная ошибка | `1dfbb03` |
+| R2 | Распознавание: эвристики (`SpeechMask`, `SpeechRepair`, `SpeechLevel`, `Hallucinations`) перенесены из Core в `Meetrec.Asr`; `RecognitionOptions` со всеми порогами и подсказкой по языку; `ITranscriber`/`IVad` и тесты `SpeechRecognizer` на фейках; окно Whisper без копии дорожки; тестовый проект → `Meetrec.Tests`. Эталон совпал побайтно | — |
 
-180 юнит-тестов в `tests/Meetrec.Core.Tests` (`dotnet test`) и 15 в `native/meetrec-capture` (`swift test`), все зелёные.
+186 юнит-тестов в `tests/Meetrec.Tests` (`dotnet test`) и 15 в `native/meetrec-capture` (`swift test`), все зелёные.
 
 Все команды спеки работают на macOS и на Windows. На Windows проверены `devices`, `record` (с микрофоном и `--no-mic`), остановка, публикация `win-x64`, диалог имён с проигрыванием фраз и расшифровка: запись 58 мин одной дорожкой — распознавание 1 мин 28 с (`large-v3-turbo`, Vulkan), диаризация 6 мин 41 с, 277 реплик, 17 спикеров (из них 11 — по 1–2 реплики, см. открытые вопросы).
 

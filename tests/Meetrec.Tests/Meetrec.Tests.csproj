@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Meetrec.Core" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Meetrec.Core\Meetrec.Core.csproj" />
+    <ProjectReference Include="..\..\src\Meetrec.Asr\Meetrec.Asr.csproj" />
+    <ProjectReference Include="..\..\src\Meetrec.Diarization\Meetrec.Diarization.csproj" />
+    <ProjectReference Include="..\..\src\Meetrec.Capture.Mac\Meetrec.Capture.Mac.csproj" />
+    <ProjectReference Include="..\..\src\Meetrec.Capture.Windows\Meetrec.Capture.Windows.csproj" />
+  </ItemGroup>
+
+</Project>

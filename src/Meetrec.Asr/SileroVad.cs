@@ -1,20 +1,13 @@
-using Meetrec.Core.Audio;
 using SherpaOnnx;
 
 namespace Meetrec.Asr;
 
-public sealed class SileroVad(string modelPath)
+public sealed class SileroVad(string modelPath) : IVad
 {
     private const int WindowSize = 512;
     private const float MaxSpeechSeconds = 30f;
 
-    public float Threshold { get; init; } = 0.35f;
-
-    public TimeSpan MinSilence { get; init; } = TimeSpan.FromSeconds(0.5);
-
-    public TimeSpan MinSpeech { get; init; } = TimeSpan.FromSeconds(0.25);
-
-    public IReadOnlyList<SpeechRegion> Detect(float[] samples, int sampleRate)
+    public IReadOnlyList<SpeechRegion> Detect(float[] samples, int sampleRate, VadOptions options)
     {
         var config = new VadModelConfig
         {
@@ -23,9 +16,9 @@ public sealed class SileroVad(string modelPath)
             SileroVad = new SileroVadModelConfig
             {
                 Model = modelPath,
-                Threshold = Threshold,
-                MinSilenceDuration = (float)MinSilence.TotalSeconds,
-                MinSpeechDuration = (float)MinSpeech.TotalSeconds,
+                Threshold = options.Threshold,
+                MinSilenceDuration = (float)options.MinSilence.TotalSeconds,
+                MinSpeechDuration = (float)options.MinSpeech.TotalSeconds,
                 WindowSize = WindowSize,
                 MaxSpeechDuration = MaxSpeechSeconds,
             },

@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Meetrec.Core.Tests" />
+    <InternalsVisibleTo Include="Meetrec.Tests" />
   </ItemGroup>
 
 </Project>

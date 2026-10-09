@@ -5,15 +5,9 @@ using Whisper.net.LibraryLoader;
 
 namespace Meetrec.Asr;
 
-public sealed class WhisperTranscriber : IDisposable
+public sealed class WhisperTranscriber : ITranscriber, IDisposable
 {
     public const string AutoLanguage = "auto";
-
-    // Sets the style: without it a Russian call can go (and, carried by context, stay) lower case without
-    // punctuation, with worse words. A short neutral phrase changed a well-recognised call the least of the
-    // prompts measured. Only for Russian: a prompt's language leaks into the text, and there is no English call
-    // to measure on.
-    public const string RussianPrompt = "Да, хорошо. Так, давайте дальше.";
 
     private readonly WhisperFactory _factory;
 
@@ -37,8 +31,8 @@ public sealed class WhisperTranscriber : IDisposable
         }
     }
 
-    public async Task<WhisperResult> TranscribeAsync(
-        float[] samples, int sampleRate, string language, IProgress<int>? progress, CancellationToken ct)
+    public async Task<WindowTranscription> TranscribeAsync(
+        ReadOnlyMemory<float> samples, int sampleRate, string language, string? prompt, IProgress<int>? progress, CancellationToken ct)
     {
         // Whisper's DTW timestamps would place word starts better, but whisper.cpp drops all text after
         // the first 30 s window when DTW is on, so word bounds come from one-word segments instead.
@@ -48,9 +42,9 @@ public sealed class WhisperTranscriber : IDisposable
             .SplitOnWord()
             .WithMaxSegmentLength(1);
 
-        if (language == "ru")
+        if (prompt is not null)
         {
-            builder = builder.WithPrompt(RussianPrompt);
+            builder = builder.WithPrompt(prompt);
         }
 
         if (progress is not null)
@@ -75,10 +69,8 @@ public sealed class WhisperTranscriber : IDisposable
             words.Add(new Word(text, segment.Start, segment.End > duration ? duration : segment.End));
         }
 
-        return new WhisperResult(words, detected);
+        return new WindowTranscription(words, detected);
     }
 
     public void Dispose() => _factory.Dispose();
 }
-
-public sealed record WhisperResult(IReadOnlyList<Word> Words, string? Language);
