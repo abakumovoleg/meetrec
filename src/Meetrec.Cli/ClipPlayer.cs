@@ -29,12 +29,12 @@ internal sealed class ClipPlayer(string audioPath)
             }
             else
             {
-                PlayWithAfplay(clip);
+                PlayWithAfplay(clip, ct);
             }
 
             return null;
         }
-        // Ctrl+C during playback: the dialog ends on the next prompt, nothing to report here.
+        // Esc or Ctrl+C during playback: Esc returns to the prompt, Ctrl+C ends the dialog there; nothing to report.
         catch (OperationCanceledException)
         {
             return null;
@@ -46,7 +46,7 @@ internal sealed class ClipPlayer(string audioPath)
         }
     }
 
-    private static void PlayWithAfplay(AudioClip clip)
+    private static void PlayWithAfplay(AudioClip clip, CancellationToken ct)
     {
         var path = Path.Combine(Path.GetTempPath(), $"meetrec-{Guid.NewGuid():N}.wav");
         try
@@ -58,7 +58,16 @@ internal sealed class ClipPlayer(string audioPath)
 
             using var player = Process.Start(new ProcessStartInfo("afplay", [path]) { UseShellExecute = false })
                 ?? throw new IOException("Не удалось запустить afplay");
-            player.WaitForExit();
+            try
+            {
+                player.WaitForExitAsync(ct).GetAwaiter().GetResult();
+            }
+            catch (OperationCanceledException)
+            {
+                player.Kill();
+                player.WaitForExit();
+                throw;
+            }
         }
         finally
         {

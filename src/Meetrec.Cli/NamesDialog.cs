@@ -23,7 +23,7 @@ internal static class NamesDialog
         var err = Console.Error;
         err.WriteLine();
         err.WriteLine($"Кто есть кто — {Formatting.Count(current.Count, "спикер", "спикера", "спикеров")}. "
-            + $"Enter — принять предложенное, «-» — оставить номер{(player is null ? "" : ", p — послушать")}, q — закончить.");
+            + $"Enter — принять предложенное, «-» — оставить номер{(player is null ? "" : ", p — послушать (Esc — остановить)")}, q — закончить.");
 
         foreach (var profile in SpeakerProfiles.Build(byLabel))
         {
@@ -91,9 +91,12 @@ internal static class NamesDialog
                 case "p" or "з" when player is not null:
                     var utterance = profile.LongestUtterances[played++ % profile.LongestUtterances.Count];
                     err.WriteLine($"  ▶ [{Formatting.Clock(utterance.Start)}] {Shorten(utterance.Text)}");
-                    if (player.Play(utterance.Start, utterance.End, ct) is { } error)
+                    using (var escape = EscapeKey.Watch(ct))
                     {
-                        err.WriteLine($"  Не удалось проиграть: {error}");
+                        if (player.Play(utterance.Start, utterance.End, escape.Token) is { } error)
+                        {
+                            err.WriteLine($"  Не удалось проиграть: {error}");
+                        }
                     }
 
                     break;
