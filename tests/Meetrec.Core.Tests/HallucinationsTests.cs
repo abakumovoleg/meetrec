@@ -45,4 +45,34 @@ public class HallucinationsTests
         // Assert
         Assert.Equal(["CSV,", "ИРМ-24", "ёлка"], result.Select(w => w.Text));
     }
+
+    [Fact]
+    public void Remove_PhraseLoopedFourTimes_KeepsFirstOccurrence()
+    {
+        // Arrange
+        string[] phrase = ["ты", "гони", "меня,", "я..."];
+        var texts = new[] { "Так," }.Concat(Enumerable.Repeat(phrase, 4).SelectMany(p => p)).Append("Сейчас").ToArray();
+        var words = texts.Select((t, i) => W(t, i)).ToArray();
+
+        // Act
+        var result = Hallucinations.Remove(words);
+
+        // Assert
+        Assert.Equal(["Так,", "ты", "гони", "меня,", "я...", "Сейчас"], result.Select(w => w.Text));
+    }
+
+    [Fact]
+    public void Remove_LiveRepeats_AreKept()
+    {
+        // Arrange
+        var texts = Enumerable.Repeat("Привет.", 5).Concat(["Давай", "только", "спросить.", "Давай", "только", "спросить."])
+            .Concat(Enumerable.Repeat(new[] { "Раз,", "два." }, 3).SelectMany(p => p)).ToArray();
+        var words = texts.Select((t, i) => W(t, i)).ToArray();
+
+        // Act
+        var result = Hallucinations.Remove(words);
+
+        // Assert
+        Assert.Equal(texts.Length, result.Count);
+    }
 }
