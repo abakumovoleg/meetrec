@@ -116,6 +116,88 @@ public class SpeechRecognizerTests
         Assert.Equal(new RecognitionStats("ru", 1, 1, Seconds(2.5), 3, 0, 1, 0), result.Stats);
     }
 
+    [Fact]
+    public async Task RecognizeSegmentsAsync_NoSpeech_DoesNotCallTranscriber()
+    {
+        // Arrange
+        var clip = Clip(30, quiet: Region(4, 7));
+        var transcriber = new PackTranscriber(_ => []);
+        var recognizer = new SpeechRecognizer(transcriber, new FakeVad(Region(5, 6)), Options);
+
+        // Act
+        var result = await recognizer.RecognizeSegmentsAsync(clip, "ru", null, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Empty(transcriber.Lengths);
+        Assert.Empty(result.Words);
+    }
+
+    [Fact]
+    public async Task RecognizeSegmentsAsync_SpeechWindows_AreTranscribedAsOnePackAndMappedBack()
+    {
+        // Arrange: windows 9.25–12.75 and 59.25–62.75 (VAD region + mask padding 0.25 + window padding 0.5) lie in
+        // the pack at 0 and at 3.5 + 1 s of separator.
+        var clip = Clip(120);
+        var transcriber = new PackTranscriber(_ => [W("Так,", 0.5, 0.9), W("хорошо.", 5.0, 5.5)]);
+        var recognizer = new SpeechRecognizer(transcriber, new FakeVad(Region(10, 12), Region(60, 62)), Options);
+
+        // Act
+        var result = await recognizer.RecognizeSegmentsAsync(clip, "ru", null, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal([(3.5 + 1 + 3.5 + 1) * SampleRate], transcriber.Lengths);
+        Assert.Equal([W("Так,", 9.75, 10.15), W("хорошо.", 59.75, 60.25)], result.Words);
+        Assert.Equal(2, result.Stats.SpeechWindows);
+    }
+
+    [Fact]
+    public async Task RecognizeSegmentsAsync_WordInSeparator_GoesToNextWindow()
+    {
+        // Arrange
+        var clip = Clip(120);
+        var transcriber = new PackTranscriber(_ => [W("Да,", 3.9, 4.1), W("хорошо.", 5.0, 5.5)]);
+        var recognizer = new SpeechRecognizer(transcriber, new FakeVad(Region(10, 12), Region(60, 62)), Options);
+
+        // Act
+        var result = await recognizer.RecognizeSegmentsAsync(clip, "ru", null, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal([W("Да,", 59.75, 59.75), W("хорошо.", 59.75, 60.25)], result.Words);
+    }
+
+    [Fact]
+    public async Task RecognizeSegmentsAsync_Hallucinations_AreRemovedAndCounted()
+    {
+        // Arrange
+        var clip = Clip(60);
+        var transcriber = new PackTranscriber(_ => [W("그래요.", 0.5, 0.8), W("Да.", 1.0, 1.4)]);
+        var recognizer = new SpeechRecognizer(transcriber, new FakeVad(Region(10, 12)), Options);
+
+        // Act
+        var result = await recognizer.RecognizeSegmentsAsync(clip, "ru", null, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal(["Да."], result.Words.Select(w => w.Text));
+        Assert.Equal(1, result.Stats.Hallucinations);
+    }
+
+    [Fact]
+    public async Task RecognizeSegmentsAsync_ZeroPackLength_TranscribesEachWindowOnItsOwn()
+    {
+        // Arrange
+        var clip = Clip(120);
+        var options = Options with { Segments = Options.Segments with { PackLength = TimeSpan.Zero } };
+        var transcriber = new PackTranscriber(_ => [W("Да.", 1.0, 1.4)]);
+        var recognizer = new SpeechRecognizer(transcriber, new FakeVad(Region(10, 12), Region(60, 62)), options);
+
+        // Act
+        var result = await recognizer.RecognizeSegmentsAsync(clip, "ru", null, TestContext.Current.CancellationToken);
+
+        // Assert
+        Assert.Equal([3.5 * SampleRate, 3.5 * SampleRate], transcriber.Lengths);
+        Assert.Equal([W("Да.", 10.25, 10.65), W("Да.", 60.25, 60.65)], result.Words);
+    }
+
     private static TimeSpan Seconds(double value) => TimeSpan.FromSeconds(value);
 
     private static SpeechRegion Region(double start, double end) => new(Seconds(start), Seconds(end));
@@ -148,6 +230,23 @@ public class SpeechRecognizerTests
     private sealed class FakeVad(params SpeechRegion[] regions) : IVad
     {
         public IReadOnlyList<SpeechRegion> Detect(float[] samples, int sampleRate, VadOptions options) => regions;
+    }
+
+    // Answers with fixed words in the time of whatever samples it is given, like Whisper on a pack of windows.
+    private sealed class PackTranscriber(Func<int, IReadOnlyList<Word>> said) : ITranscriber
+    {
+        public List<double> Lengths { get; } = [];
+
+        public Task<WindowTranscription> TranscribeAsync(
+            ReadOnlyMemory<float> samples, int sampleRate, string language, string? prompt, IProgress<int>? progress, CancellationToken ct)
+        {
+            Lengths.Add(samples.Length);
+            return Task.FromResult(new WindowTranscription(said(samples.Length), "ru"));
+        }
+
+        public void Dispose()
+        {
+        }
     }
 
     // Answers with the words said inside the window, in window-relative time like Whisper.

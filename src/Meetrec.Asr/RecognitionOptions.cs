@@ -20,6 +20,8 @@ public sealed record RecognitionOptions
 
     public HallucinationOptions Hallucinations { get; init; } = new();
 
+    public SegmentOptions Segments { get; init; } = new();
+
     // A prompt sets the style: without it a Russian call can go (and, carried by context, stay) lower case without
     // punctuation, with worse words. A short neutral phrase changed a well-recognised call the least of the
     // prompts measured. Only for Russian: a prompt's language leaks into the text, and there is no English call
@@ -55,6 +57,22 @@ public sealed record RepairOptions
     public TimeSpan GroupGap { get; init; } = TimeSpan.FromSeconds(10);
 
     public TimeSpan WindowPadding { get; init; } = TimeSpan.FromSeconds(1);
+}
+
+// Tracks of one person that are silent most of the time (Meetzone participants) are recognised by speech windows only.
+public sealed record SegmentOptions
+{
+    // Speech regions closer than this are one window.
+    public TimeSpan Gap { get; init; } = TimeSpan.FromSeconds(2);
+
+    public TimeSpan Padding { get; init; } = TimeSpan.FromSeconds(0.5);
+
+    // Windows are joined, with silence between them, into one Whisper call of up to its 30-second chunk; zero — one
+    // call per window. On a Meetzone call packs gave better text than separate windows (whose word timestamps
+    // drifted enough to interleave two people talking over each other) and were faster.
+    public TimeSpan PackLength { get; init; } = TimeSpan.FromSeconds(28);
+
+    public TimeSpan Separator { get; init; } = TimeSpan.FromSeconds(1);
 }
 
 public sealed record HallucinationOptions

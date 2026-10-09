@@ -24,8 +24,8 @@ public sealed class TranscribeInputTests : IDisposable
         // Assert
         Assert.Equal(
             [
-                new SourceTrack("mic", Path.Combine(_dir, SessionLayout.MicFile), TimeSpan.FromMilliseconds(42), FixedSpeaker.Me),
-                new SourceTrack("system", Path.Combine(_dir, SessionLayout.SystemFile), TimeSpan.Zero, DiarizedSpeakers.Instance),
+                new SourceTrack("mic", Path.Combine(_dir, SessionLayout.MicFile), TimeSpan.FromMilliseconds(42), FixedSpeaker.Me, TrackSource.Mic),
+                new SourceTrack("system", Path.Combine(_dir, SessionLayout.SystemFile), TimeSpan.Zero, DiarizedSpeakers.Instance, TrackSource.System),
             ],
             input.Tracks);
         Assert.Equal(1, input.FixedSpeakers);
@@ -120,7 +120,7 @@ public sealed class TranscribeInputTests : IDisposable
         var input = TranscribeInput.Resolve(file);
 
         // Assert
-        Assert.Equal([new SourceTrack("system", file, TimeSpan.Zero, DiarizedSpeakers.Instance)], input.Tracks);
+        Assert.Equal([new SourceTrack("system", file, TimeSpan.Zero, DiarizedSpeakers.Instance, TrackSource.System)], input.Tracks);
         Assert.Equal(_dir, input.OutputDirectory);
         Assert.Equal("Созвон.transcript", input.OutputName);
     }

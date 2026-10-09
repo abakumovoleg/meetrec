@@ -19,4 +19,8 @@ public static class SessionLayout
         File.Exists(Path.Combine(directory, SystemFile)) || File.Exists(Path.Combine(directory, MicFile));
 
     public static string TrackId(string file) => Path.GetFileNameWithoutExtension(file);
+
+    // The prefix keeps a participant's file apart from mic.wav and system.wav whatever the login.
+    public static string ParticipantFile(string login) =>
+        "mz-" + string.Concat(login.Select(c => char.IsAsciiLetterOrDigit(c) || c is '.' or '_' or '-' ? c : '_')) + ".wav";
 }

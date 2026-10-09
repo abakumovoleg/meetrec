@@ -11,5 +11,7 @@ public readonly record struct SpeakerId(string Value)
 
     public static SpeakerId Diarized(string track, int number) => new(string.Create(CultureInfo.InvariantCulture, $"{track}:{number}"));
 
+    public static SpeakerId Meetzone(string login) => new("mz:" + login);
+
     public override string ToString() => Value;
 }

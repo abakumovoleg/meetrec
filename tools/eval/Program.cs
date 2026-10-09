@@ -9,6 +9,7 @@ const string Usage = """
       recognize <wav> <words.json> [--options …] [--lang ru] [--model large-v3-turbo]
                                                                 только распознавание, слова с таймкодами в json
       timing <fixtures> [--options …] [--model …]              точность таймкодов на синтетике (say -v Milena)
+      meetzone <probe.json> <папка>                             сессия участников из записи отладочного расширения Meetzone
       options                                                   параметры распознавания по умолчанию в json
     """;
 
@@ -21,6 +22,7 @@ try
         "compare" => CompareCommand.Execute(parsed),
         "recognize" => await RecognizeCommand.ExecuteAsync(parsed),
         "timing" => await TimingCommand.ExecuteAsync(parsed),
+        "meetzone" => MeetzoneCommand.Execute(parsed),
         "options" => OptionsFile.Print(),
         _ => throw new MeetrecException(Usage),
     };

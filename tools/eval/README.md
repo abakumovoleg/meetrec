@@ -13,6 +13,7 @@ $E run tools/eval/data/cases.json out [--options opts.json]
 $E compare tools/eval/data/baseline out        # md/json/srt побайтно, код 1 при расхождении
 $E recognize meeting.wav words.json [--options opts.json] [--lang ru] [--model large-v3-turbo]
 $E timing tools/eval/data/fixtures [--options opts.json]   # таймкоды слов на синтетике, фикстуры создаются через say
+$E meetzone meetzone/<probe>.json tools/eval/data/inputs/meetzone   # сессия участников из записи отладочного расширения
 ```
 
 `cases.json` — список случаев, пути относительно файла:

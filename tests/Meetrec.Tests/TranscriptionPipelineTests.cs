@@ -122,8 +122,9 @@ public sealed class TranscriptionPipelineTests : IDisposable
         // Assert
         var conversation = result.Conversation;
         Assert.Equal(
-            [("Анна", 1.0), ("Борис", 3.0), ("Вера", 5.0)],
+            [("Анна", 1.25), ("Борис", 3.25), ("Вера", 5.25)],
             conversation.Utterances.Select(u => (conversation.NameOf(u.Speaker), u.Start.TotalSeconds)));
+        Assert.All(result.Tracks, t => Assert.Equal(1, t.Stats.SpeechWindows));
         Assert.Equal(0, diarizer.Calls);
         Assert.Empty(SpeakerNames.Nameable(conversation));
         Assert.Empty(result.DiarizedAudio);
@@ -154,7 +155,8 @@ public sealed class TranscriptionPipelineTests : IDisposable
             [new SpeechRegion(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(3))];
     }
 
-    // Speech starts at 1 s, so the main pass starts at 0 and window time equals track time.
+    // Speech starts at 1 s, so the main pass starts at 0 and window time equals track time; a participant track is
+    // recognised by its speech window, which starts at 0.25 s.
     private sealed class FakeTranscriber : ITranscriber
     {
         public bool Disposed { get; private set; }

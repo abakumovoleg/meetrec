@@ -79,6 +79,11 @@ internal static class Diagnostics
 
         parts.Add($"речь {Formatting.Duration(stats.Speech)} в {Formatting.Count(stats.SpeechRegions, "регионе", "регионах", "регионах")}, тихих отброшено {stats.QuietRegions}");
         parts.Add($"слов от Whisper {stats.WhisperWords}, галлюцинаций отброшено {stats.Hallucinations}, вне речи отброшено {stats.DroppedWords}");
+        if (stats.SpeechWindows > 0)
+        {
+            parts.Add($"Whisper только по {Formatting.Count(stats.SpeechWindows, "окну", "окнам", "окнам")} речи");
+        }
+
         if (stats.RepairWindows > 0)
         {
             parts.Add($"повторно распознано окон {stats.RepairWindows}");

@@ -29,8 +29,10 @@ public sealed class TranscriptionPipeline(TranscriptionEngines engines)
             for (var i = 0; i < clips.Count; i++)
             {
                 var name = Path.GetFileName(input.Tracks[i].Path);
-                var recognition = await RunStage(new PipelineStage(StageKind.Recognition, name), observer, stages, progress =>
-                    recognizer.RecognizeAsync(clips[i], options.Language, progress, ct));
+                var segments = input.Tracks[i].Source == TrackSource.Participant;
+                var recognition = await RunStage(new PipelineStage(StageKind.Recognition, name), observer, stages, progress => segments
+                    ? recognizer.RecognizeSegmentsAsync(clips[i], options.Language, progress, ct)
+                    : recognizer.RecognizeAsync(clips[i], options.Language, progress, ct));
                 tracks.Add(new TrackRecognition(name, recognition.Stats));
                 observer.TrackRecognized(name, recognition.Stats);
                 words.Add(recognition.Words);

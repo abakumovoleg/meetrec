@@ -2,7 +2,7 @@ using Meetrec.Core.Transcript;
 
 namespace Meetrec.Core;
 
-public sealed record SourceTrack(string Id, string Path, TimeSpan Offset, SpeakerSource Speakers);
+public sealed record SourceTrack(string Id, string Path, TimeSpan Offset, SpeakerSource Speakers, TrackSource Source);
 
 public sealed record TranscribeInput(IReadOnlyList<SourceTrack> Tracks, Session? Session, string OutputDirectory, string OutputName)
 {
@@ -28,7 +28,7 @@ public sealed record TranscribeInput(IReadOnlyList<SourceTrack> Tracks, Session?
 
         // A lone file is treated as system audio of a session without a mic, and gets its own output names so that
         // several recordings in one folder do not overwrite each other's transcripts.
-        var track = new SourceTrack(SessionLayout.TrackId(SessionLayout.SystemFile), full, TimeSpan.Zero, DiarizedSpeakers.Instance);
+        var track = new SourceTrack(SessionLayout.TrackId(SessionLayout.SystemFile), full, TimeSpan.Zero, DiarizedSpeakers.Instance, TrackSource.System);
         return new TranscribeInput([track], null, Path.GetDirectoryName(full)!, SessionLayout.TranscriptNameFor(full));
     }
 
@@ -64,5 +64,6 @@ public sealed record TranscribeInput(IReadOnlyList<SourceTrack> Tracks, Session?
         SessionLayout.TrackId(track.File),
         Path.Combine(directory, track.File),
         TimeSpan.FromMilliseconds(track.OffsetMs),
-        track.Speaker is { } speaker ? new FixedSpeaker(new SpeakerId(speaker.Id), speaker.Name) : DiarizedSpeakers.Instance);
+        track.Speaker is { } speaker ? new FixedSpeaker(new SpeakerId(speaker.Id), speaker.Name) : DiarizedSpeakers.Instance,
+        track.Source);
 }
