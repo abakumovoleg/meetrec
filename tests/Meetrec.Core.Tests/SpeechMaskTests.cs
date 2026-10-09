@@ -137,4 +137,32 @@ public class SpeechMaskTests
         // Assert
         Assert.Empty(result);
     }
+
+    [Theory]
+    [InlineData(76.0, 75.0)]
+    [InlineData(0.6, 0.0)]
+    public void Lead_IsFirstRegionStartMinusPaddingClampedToZero(double firstStart, double expected)
+    {
+        // Arrange
+        var mask = Build(R(firstStart, firstStart + 2), R(firstStart + 10, firstStart + 12));
+
+        // Act
+        var lead = mask.Lead(T(1));
+
+        // Assert
+        Assert.Equal(T(expected), lead);
+    }
+
+    [Fact]
+    public void Lead_EmptyMask_IsZero()
+    {
+        // Arrange
+        var mask = Build();
+
+        // Act
+        var lead = mask.Lead(T(1));
+
+        // Assert
+        Assert.Equal(TimeSpan.Zero, lead);
+    }
 }

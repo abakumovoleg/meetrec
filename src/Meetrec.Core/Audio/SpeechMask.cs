@@ -18,6 +18,9 @@ public sealed class SpeechMask
 
     public bool IsEmpty => _regions.Count == 0;
 
+    public TimeSpan Lead(TimeSpan padding) =>
+        IsEmpty || _regions[0].Start <= padding ? TimeSpan.Zero : _regions[0].Start - padding;
+
     public static SpeechMask Build(IEnumerable<SpeechRegion> regions, TimeSpan duration, TimeSpan padding, TimeSpan mergeGap)
     {
         var merged = new List<SpeechRegion>();

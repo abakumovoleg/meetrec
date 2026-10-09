@@ -5,6 +5,10 @@ namespace Meetrec.Asr;
 
 public sealed class SpeechRecognizer(WhisperTranscriber whisper, SileroVad vad)
 {
+    // Whisper started on a long silence hallucinates and may lose everything after it ("Продолжение следует..."
+    // over a whole 18-minute track), so the main pass starts shortly before the first speech.
+    private static readonly TimeSpan LeadPadding = TimeSpan.FromSeconds(1);
+
     public async Task<Recognition> RecognizeAsync(
         AudioClip clip, string language, IProgress<int>? progress, CancellationToken ct)
     {
@@ -20,7 +24,7 @@ public sealed class SpeechRecognizer(WhisperTranscriber whisper, SileroVad vad)
 
         // Pauses are deliberately not cut out before Whisper: on real calls condensed audio lost phrases and
         // degraded the text, so VAD is applied to the result instead.
-        var result = await whisper.TranscribeAsync(clip.Samples, clip.SampleRate, language, progress, ct);
+        var result = await TranscribeWindowAsync(clip, new SpeechRegion(mask.Lead(LeadPadding), clip.Duration), language, progress, ct);
         var words = result.Words;
 
         var sparse = SpeechRepair.FindSparse(mask.Regions, words, SpeechRepair.DefaultMinWordsPerSecond, SpeechRepair.DefaultMaxWordLength);
@@ -30,7 +34,7 @@ public sealed class SpeechRecognizer(WhisperTranscriber whisper, SileroVad vad)
             var repaired = new List<Word>();
             foreach (var window in windows)
             {
-                repaired.AddRange(await TranscribeWindowAsync(clip, window, language, ct));
+                repaired.AddRange((await TranscribeWindowAsync(clip, window, language, null, ct)).Words);
             }
 
             words = SpeechRepair.Replace(words, repaired, sparse);
@@ -42,11 +46,12 @@ public sealed class SpeechRecognizer(WhisperTranscriber whisper, SileroVad vad)
         return new Recognition(masked, stats);
     }
 
-    private async Task<IEnumerable<Word>> TranscribeWindowAsync(AudioClip clip, SpeechRegion window, string language, CancellationToken ct)
+    private async Task<WhisperResult> TranscribeWindowAsync(
+        AudioClip clip, SpeechRegion window, string language, IProgress<int>? progress, CancellationToken ct)
     {
         var from = (int)(window.Start.TotalSeconds * clip.SampleRate);
         var to = Math.Min(clip.Samples.Length, (int)(window.End.TotalSeconds * clip.SampleRate));
-        var result = await whisper.TranscribeAsync(clip.Samples[from..to], clip.SampleRate, language, null, ct);
-        return result.Words.Select(w => w with { Start = w.Start + window.Start, End = w.End + window.Start });
+        var result = await whisper.TranscribeAsync(clip.Samples[from..to], clip.SampleRate, language, progress, ct);
+        return result with { Words = [.. result.Words.Select(w => w with { Start = w.Start + window.Start, End = w.End + window.Start })] };
     }
 }

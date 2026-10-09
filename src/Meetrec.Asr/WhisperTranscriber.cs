@@ -8,6 +8,12 @@ public sealed class WhisperTranscriber : IDisposable
 {
     public const string AutoLanguage = "auto";
 
+    // Sets the style: without it a Russian call can go (and, carried by context, stay) lower case without
+    // punctuation, with worse words. A short neutral phrase changed a well-recognised call the least of the
+    // prompts measured. Only for Russian: a prompt's language leaks into the text, and there is no English call
+    // to measure on.
+    public const string RussianPrompt = "Да, хорошо. Так, давайте дальше.";
+
     private readonly WhisperFactory _factory;
 
     private WhisperTranscriber(WhisperFactory factory) => _factory = factory;
@@ -26,6 +32,11 @@ public sealed class WhisperTranscriber : IDisposable
             .WithTokenTimestamps()
             .SplitOnWord()
             .WithMaxSegmentLength(1);
+
+        if (language == "ru")
+        {
+            builder = builder.WithPrompt(RussianPrompt);
+        }
 
         if (progress is not null)
         {
