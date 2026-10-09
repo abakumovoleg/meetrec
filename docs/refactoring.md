@@ -31,7 +31,7 @@
 
 Готово, когда: в командах нет фильтров по типам исключений; ошибка Whisper.net/sherpa-onnx не роняет процесс без сообщения.
 
-## R2. Распознавание: место, параметры, тесты — коммит: —
+## R2. Распознавание: место, параметры, тесты — коммит: `bdc1089`
 
 - [x] Перенести `SpeechMask`, `SpeechRepair`, `SpeechLevel`, `Hallucinations`, `SpeechRegion` из `Meetrec.Core.Audio` в `Meetrec.Asr` (namespace `Meetrec.Asr.Heuristics` или плоско); тесты — следом.
 - [x] Тестовый проект ссылается на `Meetrec.Asr` и `Meetrec.Diarization` (решить: добавить ссылки в `Meetrec.Core.Tests` или переименовать в `Meetrec.Tests` — записать в decisions).
