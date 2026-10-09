@@ -36,7 +36,7 @@ internal sealed class HelperOutput
                 }
 
                 return null;
-            case var message when !_greeted:
+            case not null when !_greeted:
                 throw Incompatible($"он не представился, а сразу прислал «{line}» — вероятно, он старее meetrec");
             case var message:
                 return message;

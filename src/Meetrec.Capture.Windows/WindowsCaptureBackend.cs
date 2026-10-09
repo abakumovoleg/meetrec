@@ -127,18 +127,41 @@ public sealed class WindowsCaptureBackend : ICaptureBackend
         _clock.Stop();
         // A meeting may well end in silence, which loopback simply does not report: both tracks are padded to
         // the recorded length so that their duration matches the real one.
-        _systemTrack?.Finish(_clock.Elapsed);
-        _micTrack?.Finish(_clock.Elapsed);
+        var unfinished = FinishTracks(_clock.Elapsed);
 
         if (Failure() is { } failure)
         {
             throw new CaptureException($"Запись прервалась: {Describe(failure)}");
         }
 
+        if (unfinished is not null)
+        {
+            throw new CaptureException($"Не удалось дописать WAV-файл: {unfinished.Message}");
+        }
+
         if (!stopped.IsCompletedSuccessfully)
         {
             throw new CaptureException("Поток записи не остановился за отведённое время; WAV-файлы могут быть неполными.");
         }
+    }
+
+    // Each track is finished even if the other one fails, so that `run` can still transcribe whatever is readable.
+    private Exception? FinishTracks(TimeSpan duration)
+    {
+        Exception? error = null;
+        foreach (var track in new[] { _systemTrack, _micTrack })
+        {
+            try
+            {
+                track?.Finish(duration);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                error ??= e;
+            }
+        }
+
+        return error;
     }
 
     public async ValueTask DisposeAsync()
