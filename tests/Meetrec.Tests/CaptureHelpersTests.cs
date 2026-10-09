@@ -1,3 +1,4 @@
+using Meetrec.Cli;
 using Meetrec.Core.Capture;
 
 namespace Meetrec.Tests;

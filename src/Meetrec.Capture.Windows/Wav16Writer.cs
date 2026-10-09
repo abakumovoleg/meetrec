@@ -1,10 +1,11 @@
 using System.Buffers.Binary;
 using System.Text;
+using Meetrec.Core.Audio;
 
-namespace Meetrec.Core.Audio;
+namespace Meetrec.Capture.Windows;
 
 // Streaming writer for the recorded tracks: 16-bit PCM, mono, 16 kHz — the format the rest of the pipeline reads.
-public sealed class Wav16Writer : IDisposable
+internal sealed class Wav16Writer : IDisposable
 {
     public const int SampleRate = AudioLoader.TargetSampleRate;
 

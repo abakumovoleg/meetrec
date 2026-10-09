@@ -1,7 +1,7 @@
 using Meetrec.Core.Audio;
 using NAudio.Wave;
 
-namespace Meetrec.Core.Capture;
+namespace Meetrec.Capture.Windows;
 
 // One recorded track: device buffers in, a 16 kHz mono WAV out, plus the peak for the console meter.
 //
@@ -9,7 +9,7 @@ namespace Meetrec.Core.Capture;
 // out shorter than the meeting and every timecode after a pause would drift. Each packet is therefore written at
 // the position its own timestamp points to, and the gap before it is filled with silence. The microphone has no
 // such gaps and goes through the same code, which keeps both tracks on one timeline.
-public sealed class CaptureTrack : IDisposable
+internal sealed class CaptureTrack : IDisposable
 {
     // Packets arrive in bursts of tens of milliseconds, and their timestamps drift by less than that, so only a
     // clearly larger gap is a real pause.

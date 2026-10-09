@@ -19,6 +19,20 @@ public static class AudioLoader
         }
     }
 
+    // Only the header is read; a file cut short by a killed writer still counts (its header promises more than there is).
+    public static bool IsReadable(string path)
+    {
+        try
+        {
+            using var reader = new WaveFileReader(path);
+            return reader.SampleCount > 0;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or FormatException or InvalidDataException or ArgumentException)
+        {
+            return false;
+        }
+    }
+
     private static AudioClip Load(string path)
     {
         using var reader = new WaveFileReader(path);

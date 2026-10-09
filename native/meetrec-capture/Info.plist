@@ -6,6 +6,8 @@
     <string>io.github.meetrec.capture</string>
     <key>CFBundleName</key>
     <string>meetrec-capture</string>
+    <key>CFBundleShortVersionString</key>
+    <string>0.1.0</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>meetrec записывает ваш микрофон во время созвона.</string>
     <key>NSAudioCaptureUsageDescription</key>

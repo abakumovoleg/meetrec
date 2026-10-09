@@ -1,6 +1,6 @@
-namespace Meetrec.Core.Capture;
+namespace Meetrec.Cli;
 
-public sealed class SilenceWatch(TimeSpan window)
+internal sealed class SilenceWatch(TimeSpan window)
 {
     public static readonly TimeSpan DefaultWindow = TimeSpan.FromSeconds(10);
 

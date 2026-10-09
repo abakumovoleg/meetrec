@@ -1,11 +1,12 @@
+using Meetrec.Core.Audio;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
-namespace Meetrec.Core.Audio;
+namespace Meetrec.Capture.Windows;
 
 // Push counterpart of AudioLoader: capture hands over buffers in the device format, the tracks are written at
 // 16 kHz mono. The pipeline keeps its resampling state between calls, so buffer boundaries add no clicks.
-public sealed class Mono16kResampler
+internal sealed class Mono16kResampler
 {
     private readonly BufferedWaveProvider _source;
     private readonly ISampleProvider _pipeline;

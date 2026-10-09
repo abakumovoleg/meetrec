@@ -2,7 +2,7 @@ using NAudio.Wave;
 
 namespace Meetrec.Core.Audio;
 
-internal sealed class MonoDownmixSampleProvider(ISampleProvider source) : ISampleProvider
+public sealed class MonoDownmixSampleProvider(ISampleProvider source) : ISampleProvider
 {
     private readonly int _channels = source.WaveFormat.Channels;
     private float[] _buffer = [];

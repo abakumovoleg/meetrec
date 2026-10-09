@@ -1,6 +1,6 @@
-namespace Meetrec.Core.Capture;
+namespace Meetrec.Cli;
 
-public static class LevelBar
+internal static class LevelBar
 {
     public const int Width = 10;
 

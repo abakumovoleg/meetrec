@@ -1,7 +1,6 @@
 using System.CommandLine;
-using Meetrec.Capture.Mac;
-using Meetrec.Capture.Windows;
 using Meetrec.Core;
+using Meetrec.Core.Audio;
 using Meetrec.Core.Capture;
 using Meetrec.Core.Transcript;
 
@@ -18,7 +17,7 @@ internal static class RecordCommand
         options.AddTo(command);
         command.SetAction(async parse =>
         {
-            await ExecuteAsync(options.Read(parse), interrupts);
+            await ExecuteAsync(options.Read(parse), interrupts, keepAfterStopFailure: false);
             return 0;
         });
         return command;
@@ -33,7 +32,7 @@ internal static class RecordCommand
         transcribeOptions.AddTo(command);
         command.SetAction(async parse =>
         {
-            var directory = await ExecuteAsync(recordOptions.Read(parse), interrupts);
+            var directory = await ExecuteAsync(recordOptions.Read(parse), interrupts, keepAfterStopFailure: true);
             return await TranscribeCommand.ExecuteAsync(directory, transcribeOptions.Read(parse), interrupts.NextPhase());
         });
         return command;
@@ -44,7 +43,7 @@ internal static class RecordCommand
         var command = new Command("devices", "Список микрофонов");
         command.SetAction(async _ =>
         {
-            await using var backend = CreateBackend();
+            await using var backend = Platform.CreateCaptureBackend();
             foreach (var device in await backend.ListMicrophonesAsync(interrupts.Current))
             {
                 Console.WriteLine($"{(device.IsDefault ? "*" : " ")} {device.Name}  ({device.Uid})");
@@ -58,7 +57,9 @@ internal static class RecordCommand
         return command;
     }
 
-    private static async Task<string> ExecuteAsync(RecordSettings settings, Interrupts interrupts)
+    // keepAfterStopFailure: in `run` a recording whose stop failed is still transcribed if its WAV files are readable —
+    // an hour of a call is not thrown away because the helper did not exit in time.
+    private static async Task<string> ExecuteAsync(RecordSettings settings, Interrupts interrupts, bool keepAfterStopFailure)
     {
         var directory = settings.Output ?? SessionDirectory.Default(DateTime.Now, Environment.CurrentDirectory);
         try
@@ -68,7 +69,7 @@ internal static class RecordCommand
                 throw new CaptureException($"В папке уже есть запись: {directory}");
             }
 
-            await using var backend = CreateBackend();
+            await using var backend = Platform.CreateCaptureBackend();
             var stop = interrupts.Current;
             ReportPermissions(await backend.CheckPermissionsAsync(stop), backend.Hints, settings.NoMic);
             var mic = settings.NoMic ? null : await ResolveMicrophoneAsync(backend, settings.Mic, stop);
@@ -86,11 +87,22 @@ internal static class RecordCommand
 
             var started = await start;
             status.MarkStarted();
-            SessionFile.Write(Path.Combine(directory, SessionLayout.SessionFileName), NewSession(startedAt, mic, started));
+            var session = NewSession(startedAt, mic, started);
+            SessionFile.Write(Path.Combine(directory, SessionLayout.SessionFileName), session);
             status.WriteLine($"Запись в {directory}{(mic is null ? "" : $", микрофон «{mic.Name}»")}. Ctrl+C — остановить.");
 
             await Task.WhenAny(backend.Exited, Task.Delay(Timeout.Infinite, stop));
-            await backend.StopAsync();
+            try
+            {
+                await backend.StopAsync();
+            }
+            catch (CaptureException e) when (keepAfterStopFailure
+                && session.Tracks.All(t => AudioLoader.IsReadable(Path.Combine(directory, t.File))))
+            {
+                status.WriteLine($"Внимание: запись остановилась с ошибкой: {e.Message}");
+                status.WriteLine("WAV-файлы читаются — расшифровываю то, что записалось.");
+            }
+
             status.WriteLine($"Записано {Formatting.Duration(status.Elapsed)}: {directory}");
             return directory;
         }
@@ -144,23 +156,6 @@ internal static class RecordCommand
             ?? throw new CaptureException(query is null
                 ? "Нет микрофона по умолчанию. Укажите --mic или --no-mic."
                 : $"Микрофон «{query}» не найден или найдено несколько. Доступны: {string.Join(", ", devices.Select(d => d.Name))}");
-    }
-
-    private static ICaptureBackend CreateBackend()
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            return new WindowsCaptureBackend();
-        }
-
-        if (!OperatingSystem.IsMacOS())
-        {
-            throw new CaptureException("Запись поддерживается на macOS и Windows.");
-        }
-
-        var helper = MacCaptureBackend.Locate(AppContext.BaseDirectory)
-            ?? throw new CaptureException($"Не найден {MacCaptureBackend.HelperFileName} рядом с meetrec ({AppContext.BaseDirectory}).");
-        return new MacCaptureBackend(helper);
     }
 
     private static void CreateDirectory(string directory)

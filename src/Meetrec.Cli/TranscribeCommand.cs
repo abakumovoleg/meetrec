@@ -33,7 +33,7 @@ internal static class TranscribeCommand
         Console.Error.WriteLine($"Модели: {store.Root}");
         using (var http = ModelHttp.Create())
         {
-            var models = TranscriptionModels.Required(settings.Model, OperatingSystem.IsMacOS(), options.Diarization);
+            var models = TranscriptionModels.Required(settings.Model, Platform.NeedsCoreMlEncoder, options.Diarization);
             await store.EnsureAllAsync(models, http, new ConsoleDownloadProgress(), ct);
         }
 

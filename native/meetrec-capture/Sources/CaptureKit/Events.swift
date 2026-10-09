@@ -1,6 +1,13 @@
 import Foundation
 
 public enum Events {
+    // Bumped on any incompatible change to the lines below; meetrec refuses a helper with another protocol.
+    public static let protocolVersion = 1
+
+    public static func hello(version: String) -> String {
+        line([("t", "hello"), ("protocol", protocolVersion), ("version", version)])
+    }
+
     public static func level(mic: Float?, sys: Float) -> String {
         var fields: [(String, Any)] = [("t", "level")]
         if let mic {

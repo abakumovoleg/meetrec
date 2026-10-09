@@ -6,20 +6,13 @@ using Meetrec.Diarization;
 
 namespace Meetrec.Cli;
 
-// Diarization keeps half of the cores busy for minutes, and at normal priority the rest of the machine stutters.
-// Below normal it takes the same time on an idle machine but yields to whatever the user is doing. Windows only:
-// elsewhere an unprivileged process can lower its priority but not raise it back.
+// See Platform.LowerPriority.
 internal sealed class BackgroundPriority : IDisposable
 {
     private readonly ProcessPriorityClass? _previous;
 
     public BackgroundPriority()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
-
         try
         {
             using var process = Process.GetCurrentProcess();
@@ -57,7 +50,7 @@ internal sealed class BackgroundPriorityDiarizer(IDiarizer inner) : IDiarizer
 {
     public IReadOnlyList<DiarSegment> Diarize(AudioClip clip, int? numSpeakers, float threshold, IProgress<int>? progress)
     {
-        using (new BackgroundPriority())
+        using (Platform.LowerPriority())
         {
             return inner.Diarize(clip, numSpeakers, threshold, progress);
         }

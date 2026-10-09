@@ -7,6 +7,9 @@ func emit(_ line: String) {
     print(line)
 }
 
+// The embedded Info.plist is the helper's bundle, so its version is readable without a .app around the binary.
+let helperVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "dev"
+
 func fail(_ message: String, _ code: ExitCode) -> Never {
     FileHandle.standardError.write(Data((message + "\n").utf8))
     exit(code.rawValue)
@@ -137,6 +140,10 @@ do {
     command = try Arguments.parse(Array(CommandLine.arguments.dropFirst()))
 } catch {
     fail("\(error)\n\(Arguments.usage)", .failure)
+}
+
+if command != .help {
+    emit(Events.hello(version: helperVersion))
 }
 
 switch command {

@@ -1,8 +1,6 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Meetrec.Core;
 using Meetrec.Core.Audio;
-using NAudio.Wave;
 
 namespace Meetrec.Cli;
 
@@ -14,13 +12,11 @@ internal sealed class ClipPlayer(Func<string, AudioClip?> load)
 
     private readonly Dictionary<string, AudioClip?> _audio = [];
 
-    public static bool IsSupported => OperatingSystem.IsMacOS() || OperatingSystem.IsWindows();
-
     public static ClipPlayer? ForFiles(IReadOnlyList<SourceTrack> tracks) =>
-        IsSupported ? new ClipPlayer(id => tracks.FirstOrDefault(t => t.Id == id) is { } t ? AudioLoader.LoadMono16k(t.Path) : null) : null;
+        Platform.CanPlayClips ? new ClipPlayer(id => tracks.FirstOrDefault(t => t.Id == id) is { } t ? AudioLoader.LoadMono16k(t.Path) : null) : null;
 
     public static ClipPlayer? ForClips(IReadOnlyDictionary<string, AudioClip> clips) =>
-        IsSupported ? new ClipPlayer(clips.GetValueOrDefault) : null;
+        Platform.CanPlayClips ? new ClipPlayer(clips.GetValueOrDefault) : null;
 
     // Returns the error message, or null when the clip has been played.
     public string? Play(string track, TimeSpan start, TimeSpan end, CancellationToken ct)
@@ -39,14 +35,7 @@ internal sealed class ClipPlayer(Func<string, AudioClip?> load)
 
             var clip = audio.Slice(start - Padding, (end - start > MaxClip ? start + MaxClip : end) + Padding);
 
-            if (OperatingSystem.IsWindows())
-            {
-                WindowsClipOutput.Play(clip, ct);
-            }
-            else
-            {
-                PlayWithAfplay(clip, ct);
-            }
+            Platform.PlayClip(clip, ct);
 
             return null;
         }
@@ -59,35 +48,6 @@ internal sealed class ClipPlayer(Func<string, AudioClip?> load)
             or NotSupportedException or InvalidDataException or ArgumentException)
         {
             return e.Message;
-        }
-    }
-
-    private static void PlayWithAfplay(AudioClip clip, CancellationToken ct)
-    {
-        var path = Path.Combine(Path.GetTempPath(), $"meetrec-{Guid.NewGuid():N}.wav");
-        try
-        {
-            using (var writer = new WaveFileWriter(path, WaveFormat.CreateIeeeFloatWaveFormat(clip.SampleRate, 1)))
-            {
-                writer.WriteSamples(clip.Samples, 0, clip.Samples.Length);
-            }
-
-            using var player = Process.Start(new ProcessStartInfo("afplay", [path]) { UseShellExecute = false })
-                ?? throw new IOException("Не удалось запустить afplay");
-            try
-            {
-                player.WaitForExitAsync(ct).GetAwaiter().GetResult();
-            }
-            catch (OperationCanceledException)
-            {
-                player.Kill();
-                player.WaitForExit();
-                throw;
-            }
-        }
-        finally
-        {
-            File.Delete(path);
         }
     }
 }

@@ -25,6 +25,17 @@ struct EventsTests {
         #expect(line == #"{"t":"level","sys":1.000}"#)
     }
 
+    @Test func hello_writesProtocolAndVersion() {
+        // Arrange
+        let version = "0.1.0"
+
+        // Act
+        let line = Events.hello(version: version)
+
+        // Assert
+        #expect(line == #"{"t":"hello","protocol":1,"version":"0.1.0"}"#)
+    }
+
     @Test func started_writesOffset() {
         // Arrange
         let offset = 12

@@ -50,12 +50,8 @@ public class HelperMessageTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    [InlineData("not json")]
-    [InlineData("[1,2]")]
-    [InlineData("""{"t":"unknown"}""")]
-    [InlineData("""{"t":"started"}""")]
-    [InlineData("""{"t":"level","sys":"loud"}""")]
-    public void Parse_UnknownOrBroken_ReturnsNull(string? line)
+    [InlineData("  ")]
+    public void Parse_Blank_ReturnsNull(string? line)
     {
         // Arrange
         var input = line;
@@ -65,6 +61,37 @@ public class HelperMessageTests
 
         // Assert
         Assert.Null(message);
+    }
+
+    [Theory]
+    [InlineData("not json")]
+    [InlineData("[1,2]")]
+    [InlineData("""{"t":"unknown"}""")]
+    [InlineData("""{"t":"started"}""")]
+    [InlineData("""{"t":"level","sys":"loud"}""")]
+    public void Parse_UnknownOrBroken_KeepsLineAsUnrecognized(string line)
+    {
+        // Arrange
+        var input = line;
+
+        // Act
+        var message = HelperMessage.Parse(input);
+
+        // Assert
+        Assert.Equal(new HelperMessage.Unrecognized(line), message);
+    }
+
+    [Fact]
+    public void Parse_Hello_ReadsProtocolAndVersion()
+    {
+        // Arrange
+        var line = """{"t":"hello","protocol":1,"version":"0.1.0"}""";
+
+        // Act
+        var message = HelperMessage.Parse(line);
+
+        // Assert
+        Assert.Equal(new HelperMessage.Hello(1, "0.1.0"), message);
     }
 }
 

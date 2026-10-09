@@ -155,4 +155,60 @@ public sealed class AudioLoaderTests : IDisposable
         var error = Assert.Throws<MeetrecException>(act);
         Assert.Contains(path, error.Message);
     }
+
+    [Fact]
+    public void IsReadable_WavWithSamples_IsTrue()
+    {
+        // Arrange
+        var path = PathOf("ok.wav");
+        WavFile.WritePcm16(path, 16_000, [WavFile.Constant(0.1f, 1_600)]);
+
+        // Act
+        var readable = AudioLoader.IsReadable(path);
+
+        // Assert
+        Assert.True(readable);
+    }
+
+    [Fact]
+    public void IsReadable_HeaderClaimsMoreThanWritten_IsTrue()
+    {
+        // Arrange
+        var path = PathOf("cut.wav");
+        WavFile.WritePcm16(path, 16_000, [WavFile.Constant(0.1f, 16_000)]);
+        using (var file = File.Open(path, FileMode.Open))
+        {
+            file.SetLength(file.Length / 2);
+        }
+
+        // Act
+        var readable = AudioLoader.IsReadable(path);
+
+        // Assert
+        Assert.True(readable);
+    }
+
+    [Theory]
+    [InlineData("garbage")]
+    [InlineData("missing")]
+    [InlineData("empty")]
+    public void IsReadable_NotAWavOrNoSamples_IsFalse(string kind)
+    {
+        // Arrange
+        var path = PathOf(kind + ".wav");
+        if (kind == "garbage")
+        {
+            File.WriteAllText(path, "это не wav");
+        }
+        else if (kind == "empty")
+        {
+            WavFile.WritePcm16(path, 16_000, [[]]);
+        }
+
+        // Act
+        var readable = AudioLoader.IsReadable(path);
+
+        // Assert
+        Assert.False(readable);
+    }
 }

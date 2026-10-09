@@ -21,6 +21,7 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
 
     private readonly TaskCompletionSource<CaptureStarted> _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly StringBuilder _stderr = new();
+    private readonly HelperOutput _output = new();
     private Process? _process;
     private Task<int>? _exitCode;
 
@@ -69,7 +70,7 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
         }
 
         var process = new Process { StartInfo = CreateStartInfo(args) };
-        process.OutputDataReceived += (_, e) => OnOutput(e.Data);
+        process.OutputDataReceived += (_, e) => OnOutput(process, e.Data);
         process.ErrorDataReceived += (_, e) =>
         {
             if (e.Data is not null)
@@ -120,7 +121,7 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
         catch (TimeoutException)
         {
             KillQuietly(process);
-            throw new CaptureException("Хелпер записи не завершился за отведённое время и был остановлен принудительно; WAV-файлы могут быть неполными.");
+            throw new CaptureException(_output.Explain("Хелпер записи не завершился за отведённое время и был остановлен принудительно; WAV-файлы могут быть неполными."));
         }
 
         if (code != 0)
@@ -149,12 +150,14 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
         var stdout = process.StandardOutput.ReadToEndAsync(ct);
         var stderr = process.StandardError.ReadToEndAsync(ct);
         await process.WaitForExitAsync(ct);
+        var output = new HelperOutput();
+        var messages = (await stdout).Split('\n').Select(output.Accept).OfType<HelperMessage>().ToList();
         if (process.ExitCode != 0)
         {
-            throw new CaptureException($"Не удалось получить {what}: {(await stderr).Trim()}");
+            throw new CaptureException(output.Explain($"Не удалось получить {what}: {(await stderr).Trim()}"));
         }
 
-        return [.. (await stdout).Split('\n').Select(HelperMessage.Parse).OfType<HelperMessage>()];
+        return messages;
     }
 
     private ProcessStartInfo CreateStartInfo(IEnumerable<string> args)
@@ -180,9 +183,21 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
         return info;
     }
 
-    private void OnOutput(string? line)
+    private void OnOutput(Process process, string? line)
     {
-        switch (HelperMessage.Parse(line))
+        HelperMessage? message;
+        try
+        {
+            message = _output.Accept(line);
+        }
+        catch (CaptureException e)
+        {
+            _started.TrySetException(e);
+            KillQuietly(process);
+            return;
+        }
+
+        switch (message)
         {
             case HelperMessage.Started started:
                 _started.TrySetResult(new CaptureStarted(started.OffsetMs, SystemDeviceName));
@@ -218,7 +233,7 @@ public sealed partial class MacCaptureBackend(string helperPath) : ICaptureBacke
             _ => $"Хелпер записи завершился с кодом {code}.",
         };
 
-        return new CaptureException(details.Length > 0 ? $"{reason}\n{details}" : reason);
+        return new CaptureException(_output.Explain(details.Length > 0 ? $"{reason}\n{details}" : reason));
     }
 
     private static void KillQuietly(Process process)

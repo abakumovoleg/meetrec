@@ -32,6 +32,10 @@
     <ProjectReference Include="..\Meetrec.Capture.Windows\Meetrec.Capture.Windows.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Meetrec.Tests" />
+  </ItemGroup>
+
   <!-- Whisper.net copies native libraries for every platform as plain files; publish only the target one. -->
   <Target Name="FilterPublishedFiles" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(WhisperPlatform)' != ''">
     <ItemGroup>
