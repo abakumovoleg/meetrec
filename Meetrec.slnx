@@ -6,6 +6,10 @@
     <Project Path="src/Meetrec.Cli/Meetrec.Cli.csproj" />
     <Project Path="src/Meetrec.Core/Meetrec.Core.csproj" />
     <Project Path="src/Meetrec.Diarization/Meetrec.Diarization.csproj" />
+    <Project Path="src/Meetrec.Pipeline/Meetrec.Pipeline.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/eval/Meetrec.Eval.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Meetrec.Tests/Meetrec.Tests.csproj" />

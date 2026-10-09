@@ -1,0 +1,24 @@
+<Project>
+
+  <!-- Whisper runtimes are chosen by the application, not in Meetrec.Asr: a referenced library is built without the
+       RuntimeIdentifier, so it cannot tell a cross-platform publish from a local build. -->
+  <PropertyGroup>
+    <TargetsMac Condition="'$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX'))">true</TargetsMac>
+    <TargetsMac Condition="$(RuntimeIdentifier.StartsWith('osx'))">true</TargetsMac>
+    <TargetsWindows Condition="'$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows'))">true</TargetsWindows>
+    <TargetsWindows Condition="$(RuntimeIdentifier.StartsWith('win'))">true</TargetsWindows>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Whisper.net.Runtime" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetsMac)' == 'true'">
+    <PackageReference Include="Whisper.net.Runtime.CoreML" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetsWindows)' == 'true'">
+    <PackageReference Include="Whisper.net.Runtime.Vulkan" />
+  </ItemGroup>
+
+</Project>

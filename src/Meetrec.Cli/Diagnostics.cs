@@ -2,6 +2,7 @@ using System.Globalization;
 using Meetrec.Asr;
 using Meetrec.Core;
 using Meetrec.Core.Models;
+using Meetrec.Core.Transcript;
 
 namespace Meetrec.Cli;
 
@@ -25,6 +26,12 @@ internal static class Diagnostics
             ? $"спикеров {settings.Speakers} (кластеров диаризации {clusters}, {diarization.Embedding.Id})"
             : $"спикеры автоматически ({diarization.Embedding.Id}, порог {threshold})";
         return $"Параметры: язык {settings.Language}, модель {settings.Model}, {speakers}, форматы {string.Join(", ", settings.Formats)}";
+    }
+
+    public static string Summary(IReadOnlyList<Utterance> utterances, TimeSpan elapsed)
+    {
+        var speakers = utterances.Select(u => u.Speaker).Where(s => s != Speakers.Unknown).Distinct().Count();
+        return $"Готово за {Formatting.Duration(elapsed)}: {utterances.Count} реплик, спикеров {speakers}";
     }
 
     public static string Recognition(RecognitionStats stats, string language)

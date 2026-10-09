@@ -489,3 +489,6 @@ meetzone/
 
 # Ad-hoc transcription outputs in the repo root
 /out*/
+
+# Evaluation data: real recordings, baselines and generated fixtures stay local
+/tools/eval/data/

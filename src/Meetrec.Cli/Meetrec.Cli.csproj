@@ -15,34 +15,19 @@
     <WhisperPlatform>$(RuntimeIdentifier.Replace('osx-', 'macos-'))</WhisperPlatform>
   </PropertyGroup>
 
-  <!-- Whisper runtimes are chosen here, not in Meetrec.Asr: a referenced library is built without the RuntimeIdentifier,
-       so it cannot tell a cross-platform publish from a local build. -->
-  <PropertyGroup>
-    <TargetsMac Condition="'$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('OSX'))">true</TargetsMac>
-    <TargetsMac Condition="$(RuntimeIdentifier.StartsWith('osx'))">true</TargetsMac>
-    <TargetsWindows Condition="'$(RuntimeIdentifier)' == '' And $([MSBuild]::IsOSPlatform('Windows'))">true</TargetsWindows>
-    <TargetsWindows Condition="$(RuntimeIdentifier.StartsWith('win'))">true</TargetsWindows>
-  </PropertyGroup>
+  <Import Project="..\..\build\WhisperRuntime.props" />
 
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
-    <PackageReference Include="Whisper.net.Runtime" />
     <!-- Playback of speaker clips in the names dialog (WasapiPlayer). -->
     <PackageReference Include="NAudio.Wasapi" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetsMac)' == 'true'">
-    <PackageReference Include="Whisper.net.Runtime.CoreML" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetsWindows)' == 'true'">
-    <PackageReference Include="Whisper.net.Runtime.Vulkan" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Meetrec.Core\Meetrec.Core.csproj" />
     <ProjectReference Include="..\Meetrec.Asr\Meetrec.Asr.csproj" />
     <ProjectReference Include="..\Meetrec.Diarization\Meetrec.Diarization.csproj" />
+    <ProjectReference Include="..\Meetrec.Pipeline\Meetrec.Pipeline.csproj" />
     <ProjectReference Include="..\Meetrec.Capture.Mac\Meetrec.Capture.Mac.csproj" />
     <ProjectReference Include="..\Meetrec.Capture.Windows\Meetrec.Capture.Windows.csproj" />
   </ItemGroup>

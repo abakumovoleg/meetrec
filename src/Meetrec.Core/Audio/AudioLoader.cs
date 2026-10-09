@@ -38,16 +38,31 @@ public static class AudioLoader
         return new AudioClip(ReadAll(provider, expected), TargetSampleRate);
     }
 
-    private static float[] ReadAll(ISampleProvider provider, int capacityHint)
+    // The resampler yields exactly the expected count (checked for 8-48 kHz, mono and stereo, up to an hour), so the
+    // array is allocated once: growing a list and copying it out doubled the peak memory on long recordings.
+    private static float[] ReadAll(ISampleProvider provider, int expected)
     {
-        var result = new List<float>(capacityHint + TargetSampleRate);
-        var buffer = new float[TargetSampleRate];
+        var result = new float[expected];
+        var filled = 0;
         int read;
-        while ((read = provider.Read(buffer)) > 0)
+        while (filled < result.Length && (read = provider.Read(result.AsSpan(filled))) > 0)
         {
-            result.AddRange(buffer.AsSpan(0, read));
+            filled += read;
         }
 
-        return [.. result];
+        var tail = new List<float>();
+        var buffer = new float[TargetSampleRate];
+        while ((read = provider.Read(buffer)) > 0)
+        {
+            tail.AddRange(buffer.AsSpan(0, read));
+        }
+
+        if (tail.Count > 0)
+        {
+            return [.. result, .. tail];
+        }
+
+        Array.Resize(ref result, filled);
+        return result;
     }
 }

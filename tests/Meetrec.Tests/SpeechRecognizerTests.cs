@@ -167,5 +167,9 @@ public class SpeechRecognizerTests
                 .Select(w => w with { Start = w.Start - start, End = w.End - start });
             return Task.FromResult(new WindowTranscription([.. words], "ru"));
         }
+
+        public void Dispose()
+        {
+        }
     }
 }

@@ -1,12 +1,18 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Globalization;
+using Meetrec.Asr;
 using Meetrec.Core.Models;
 using Meetrec.Core.Output;
+using Meetrec.Pipeline;
 
 namespace Meetrec.Cli;
 
-internal sealed record TranscribeSettings(int? Speakers, string Language, string Model, IReadOnlyList<string> Formats, float? Threshold, bool AskNames);
+internal sealed record TranscribeSettings(int? Speakers, string Language, string Model, IReadOnlyList<string> Formats, float? Threshold, bool AskNames)
+{
+    public TranscriptionOptions ToOptions(bool hasMicTrack) =>
+        new(Language, Model, RecognitionOptions.Default, DiarizationSettings.Choose(Speakers, hasMicTrack, Threshold));
+}
 
 internal sealed class TranscribeOptions
 {

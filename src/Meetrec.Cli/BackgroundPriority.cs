@@ -1,5 +1,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using Meetrec.Core.Audio;
+using Meetrec.Core.Transcript;
+using Meetrec.Diarization;
 
 namespace Meetrec.Cli;
 
@@ -46,6 +49,17 @@ internal sealed class BackgroundPriority : IDisposable
         }
         catch (Exception e) when (e is Win32Exception or InvalidOperationException)
         {
+        }
+    }
+}
+
+internal sealed class BackgroundPriorityDiarizer(IDiarizer inner) : IDiarizer
+{
+    public IReadOnlyList<DiarSegment> Diarize(AudioClip clip, int? numSpeakers, float threshold, IProgress<int>? progress)
+    {
+        using (new BackgroundPriority())
+        {
+            return inner.Diarize(clip, numSpeakers, threshold, progress);
         }
     }
 }

@@ -5,7 +5,7 @@ using SherpaOnnx;
 
 namespace Meetrec.Diarization;
 
-public sealed class SpeakerDiarizer(string segmentationModelPath, string embeddingModelPath)
+public sealed class SpeakerDiarizer(string segmentationModelPath, string embeddingModelPath) : IDiarizer
 {
     private const float WindowShiftRatio = 0.1f;
 

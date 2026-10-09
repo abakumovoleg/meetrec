@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\src\Meetrec.Core\Meetrec.Core.csproj" />
     <ProjectReference Include="..\..\src\Meetrec.Asr\Meetrec.Asr.csproj" />
     <ProjectReference Include="..\..\src\Meetrec.Diarization\Meetrec.Diarization.csproj" />
+    <ProjectReference Include="..\..\src\Meetrec.Pipeline\Meetrec.Pipeline.csproj" />
     <ProjectReference Include="..\..\src\Meetrec.Capture.Mac\Meetrec.Capture.Mac.csproj" />
     <ProjectReference Include="..\..\src\Meetrec.Capture.Windows\Meetrec.Capture.Windows.csproj" />
   </ItemGroup>

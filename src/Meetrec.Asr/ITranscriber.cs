@@ -2,7 +2,7 @@ using Meetrec.Core.Transcript;
 
 namespace Meetrec.Asr;
 
-public interface ITranscriber
+public interface ITranscriber : IDisposable
 {
     // Word timestamps are relative to the start of the samples.
     Task<WindowTranscription> TranscribeAsync(

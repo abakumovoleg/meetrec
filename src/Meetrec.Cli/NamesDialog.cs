@@ -8,7 +8,7 @@ internal static class NamesDialog
     private const int SampleLength = 110;
 
     // Returns the renamed transcript, or null if nothing changed or the dialog was interrupted.
-    public static IReadOnlyList<Utterance>? Run(IReadOnlyList<Utterance> utterances, string? audioPath, CancellationToken ct)
+    public static IReadOnlyList<Utterance>? Run(IReadOnlyList<Utterance> utterances, ClipPlayer? player, CancellationToken ct)
     {
         var current = SpeakerNames.Current(utterances);
         if (current.Count == 0)
@@ -18,7 +18,6 @@ internal static class NamesDialog
 
         var byLabel = SpeakerNames.Reset(utterances);
         var hints = NameHints.Find(byLabel);
-        var player = ClipPlayer.IsSupported && File.Exists(audioPath) ? new ClipPlayer(audioPath) : null;
         var names = current.ToDictionary(s => s.Label, s => s.Name);
 
         var err = Console.Error;

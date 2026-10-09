@@ -24,5 +24,6 @@ CLI-рекордер встреч на .NET 10: запись двух дорож
 
 - Модели скачаны в `~/.cache/meetrec/models`: `large-v3-turbo` + CoreML-энкодер, `tiny`, Silero VAD, pyannote, обе модели эмбеддингов. Список — `dotnet run --project src/Meetrec.Cli -- models`.
 - Реальная запись созвона пользователя (8 мин, смешанная дорожка Meetily, 4–5 участников, русский): `/Users/olabakumov/Movies/meetily-recordings/Meeting 08_10_26_15_00_34_2026-10-08_12-00/audio.mp4`. Не изменять и не коммитить. Конвертация: `afconvert -f WAVE -d LEI16@16000 -c 1 <mp4> /tmp/meetrec-eval/meeting.wav`.
-- Одноразовые стенды замеров — в `/tmp/meetrec-eval` (`harness` — распознавание, `diar` — диаризация, `render` — md из json). Могут пропасть после перезагрузки.
+- Стенд замеров — `tools/eval` (`meetrec-eval`: прогон конвейера по случаям с параметрами из json, сравнение с эталоном, таймкоды на синтетике), см. `tools/eval/README.md`. Данные — `tools/eval/data/` вне git: случаи `cases.json`, входы, эталон `baseline/`, фикстуры.
+- Одноразовые стенды — в `/tmp/meetrec-eval` (`diar` — диаризация, `render` — md из json). Могут пропасть после перезагрузки.
 - Синтетика: русский голос только `say -v Milena`; английские TTS-голоса для диаризации не показательны.

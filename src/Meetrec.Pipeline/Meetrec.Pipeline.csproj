@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Meetrec.Core\Meetrec.Core.csproj" />
+    <ProjectReference Include="..\Meetrec.Asr\Meetrec.Asr.csproj" />
+    <ProjectReference Include="..\Meetrec.Diarization\Meetrec.Diarization.csproj" />
+  </ItemGroup>
+
+</Project>

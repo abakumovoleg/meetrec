@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>meetrec-eval</AssemblyName>
+    <RootNamespace>Meetrec.Eval</RootNamespace>
+    <IsPublishable>false</IsPublishable>
+  </PropertyGroup>
+
+  <Import Project="..\..\build\WhisperRuntime.props" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Meetrec.Pipeline\Meetrec.Pipeline.csproj" />
+  </ItemGroup>
+
+</Project>

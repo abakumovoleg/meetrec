@@ -43,7 +43,7 @@ internal static class NamesCommand
             return 0;
         }
 
-        if (NamesDialog.Run(utterances, input.SystemPath, ct) is not { } named)
+        if (NamesDialog.Run(utterances, ClipPlayer.ForFile(input.SystemPath), ct) is not { } named)
         {
             return ct.IsCancellationRequested ? 130 : 0;
         }

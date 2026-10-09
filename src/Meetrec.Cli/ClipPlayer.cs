@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Meetrec.Core;
 using Meetrec.Core.Audio;
 using NAudio.Wave;
 
 namespace Meetrec.Cli;
 
-internal sealed class ClipPlayer(string audioPath)
+internal sealed class ClipPlayer(Func<AudioClip> load)
 {
     public static readonly TimeSpan MaxClip = TimeSpan.FromSeconds(8);
 
@@ -15,12 +16,17 @@ internal sealed class ClipPlayer(string audioPath)
 
     public static bool IsSupported => OperatingSystem.IsMacOS() || OperatingSystem.IsWindows();
 
+    public static ClipPlayer? ForFile(string? path) =>
+        IsSupported && File.Exists(path) ? new ClipPlayer(() => AudioLoader.LoadMono16k(path)) : null;
+
+    public static ClipPlayer? ForClip(AudioClip clip) => IsSupported ? new ClipPlayer(() => clip) : null;
+
     // Returns the error message, or null when the clip has been played.
     public string? Play(TimeSpan start, TimeSpan end, CancellationToken ct)
     {
         try
         {
-            _audio ??= AudioLoader.LoadMono16k(audioPath);
+            _audio ??= load();
             var clip = _audio.Slice(start - Padding, (end - start > MaxClip ? start + MaxClip : end) + Padding);
 
             if (OperatingSystem.IsWindows())
@@ -39,7 +45,7 @@ internal sealed class ClipPlayer(string audioPath)
         {
             return null;
         }
-        catch (Exception e) when (e is IOException or ExternalException or InvalidOperationException
+        catch (Exception e) when (e is MeetrecException or IOException or ExternalException or InvalidOperationException
             or NotSupportedException or InvalidDataException or ArgumentException)
         {
             return e.Message;

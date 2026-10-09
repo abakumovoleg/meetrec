@@ -1,10 +1,7 @@
-using System.Diagnostics;
-
 namespace Meetrec.Cli;
 
 internal sealed class ConsoleStageProgress(string stage) : IProgress<int>
 {
-    private readonly Stopwatch _elapsed = Stopwatch.StartNew();
     private readonly Lock _gate = new();
     private int _shown = -1;
 
@@ -23,11 +20,11 @@ internal sealed class ConsoleStageProgress(string stage) : IProgress<int>
         }
     }
 
-    public void Complete()
+    public void Complete(TimeSpan elapsed)
     {
         lock (_gate)
         {
-            var line = $"{stage}: готово за {Formatting.Duration(_elapsed.Elapsed)}";
+            var line = $"{stage}: готово за {Formatting.Duration(elapsed)}";
             Console.Error.WriteLine(Console.IsErrorRedirected ? line : $"\r{line}\u001b[K");
         }
     }

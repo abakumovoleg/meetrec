@@ -8,7 +8,7 @@
 
 - [x] Снять базовый результат до R2: `transcribe` реальной 8-минутной записи (`meeting.wav`, см. `CLAUDE.md`) и папки сессии `out-new/` с фиксированными параметрами (`--lang ru --model large-v3-turbo`, без имён, плюс один прогон с `--speakers 5`). Сохранить `transcript.md`/`json` в `/tmp/meetrec-eval/baseline/` (а после R3 — в `tools/eval/baseline/` вне git, если там голоса).
 - Проверка после R2, R3, R4: `transcript.md` совпадает побайтно; `transcript.json` совпадает по содержимому с поправкой на новый формат (R4).
-- Снято на R1 (`9ae091b`): `out-new/` не нашлась, вместо неё — сессия `/tmp/meetrec-eval/rec1009` (19 мин, две дорожки). Эталон и копии входов — `/tmp/meetrec-eval/baseline/`, сверка — `baseline/check.sh <meetrec>`. Два прогона совпали побайтно — эталон детерминирован.
+- Снято на R1 (`9ae091b`): `out-new/` не нашлась, вместо неё — сессия `/tmp/meetrec-eval/rec1009` (19 мин, две дорожки). Эталон и копии входов — `/tmp/meetrec-eval/baseline/`, сверка — `baseline/check.sh <meetrec>`; с R3 — `tools/eval/data/` (`cases.json`, `inputs/`, `baseline/`), сверка — `meetrec-eval run` + `compare`. Два прогона совпали побайтно — эталон детерминирован.
 
 ---
 
@@ -49,14 +49,14 @@
 
 ## R3. Конвейер расшифровки из CLI в библиотеку — коммит: —
 
-- [ ] Проект `Meetrec.Pipeline` (ссылается на Core, Asr, Diarization): `TranscriptionPipeline.RunAsync(input, TranscriptionOptions, ITranscriptionObserver, ct)` → `TranscriptionResult` (реплики, статистика по дорожкам, время этапов).
-- [ ] `TranscriptionOptions` = язык, модель Whisper, `RecognitionOptions`, `DiarizationSettings`.
-- [ ] `ITranscriptionObserver`: начало/прогресс/конец этапа, статистика дорожки, предупреждения (нет `session.json`). Скачивание моделей — отдельный вызов до конвейера с `IProgress<DownloadProgress>`.
-- [ ] `TranscribeCommand` — только разбор опций, вызов конвейера, отрисовка (`Diagnostics`, `ConsoleStageProgress`), запись файлов, диалог имён.
-- [ ] Диалог имён получает уже загруженную системную дорожку вместо повторного `AudioLoader.LoadMono16k` в `ClipPlayer` (для `names` — загрузка как сейчас).
-- [ ] `AudioLoader.ReadAll`: массив точного размера вместо `List<float>` + `ToArray()` (пик памяти ×2 на часовой записи).
-- [ ] Стенд замеров в репозиторий: `tools/eval` (консольный проект в `Meetrec.slnx`, не публикуется) — прогон конвейера с `RecognitionOptions` из аргументов/файла, сравнение с эталоном. Данные и результаты — вне git.
-- [ ] Тест конвейера на фейках `ITranscriber`/`IVad`/диаризатора: две дорожки со сдвигом → ожидаемые реплики.
+- [x] Проект `Meetrec.Pipeline` (ссылается на Core, Asr, Diarization): `TranscriptionPipeline.RunAsync(input, TranscriptionOptions, ITranscriptionObserver, ct)` → `TranscriptionResult` (реплики, статистика по дорожкам, время этапов).
+- [x] `TranscriptionOptions` = язык, модель Whisper, `RecognitionOptions`, `DiarizationSettings`.
+- [x] `ITranscriptionObserver`: начало/прогресс/конец этапа, статистика дорожки, предупреждения (нет `session.json`). Скачивание моделей — отдельный вызов до конвейера с `IProgress<DownloadProgress>`.
+- [x] `TranscribeCommand` — только разбор опций, вызов конвейера, отрисовка (`Diagnostics`, `ConsoleStageProgress`), запись файлов, диалог имён.
+- [x] Диалог имён получает уже загруженную системную дорожку вместо повторного `AudioLoader.LoadMono16k` в `ClipPlayer` (для `names` — загрузка как сейчас).
+- [x] `AudioLoader.ReadAll`: массив точного размера вместо `List<float>` + `ToArray()` (пик памяти ×2 на часовой записи).
+- [x] Стенд замеров в репозиторий: `tools/eval` (консольный проект в `Meetrec.slnx`, не публикуется) — прогон конвейера с `RecognitionOptions` из аргументов/файла, сравнение с эталоном. Данные и результаты — вне git.
+- [x] Тест конвейера на фейках `ITranscriber`/`IVad`/диаризатора: две дорожки со сдвигом → ожидаемые реплики.
 
 Готово, когда: эталон совпал; `TranscribeCommand` < 60 строк; стенд из `/tmp/meetrec-eval/harness` воспроизводится через `tools/eval`.
 

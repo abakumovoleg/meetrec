@@ -17,6 +17,15 @@ public sealed class ModelStore(string root)
         _ => throw new ArgumentOutOfRangeException(nameof(model)),
     };
 
+    public async Task EnsureAllAsync(
+        IEnumerable<ModelInfo> models, HttpClient http, IProgress<DownloadProgress>? progress, CancellationToken ct)
+    {
+        foreach (var model in models)
+        {
+            await EnsureAsync(model, http, progress, ct);
+        }
+    }
+
     public async Task<string> EnsureAsync(ModelInfo model, HttpClient http, IProgress<DownloadProgress>? progress, CancellationToken ct)
     {
         var target = PathOf(model);
