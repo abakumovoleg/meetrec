@@ -20,7 +20,7 @@
 
 Готово, когда: `dotnet build`, `dotnet test` зелёные.
 
-## R1. Единая обработка ошибок — коммит: —
+## R1. Единая обработка ошибок — коммит: `1dfbb03`
 
 - [x] `MeetrecException` в `Meetrec.Core` — ошибка для пользователя (текст без стека); `CaptureException` наследует её.
 - [x] Ошибки ввода бросают `MeetrecException` вместо `ArgumentException`/`FileNotFoundException`: `TranscribeInput.Resolve`, `ModelCatalog.Find`, `NamesCommand` («нет transcript.json»), `SpeakerDiarizer` (частота).
